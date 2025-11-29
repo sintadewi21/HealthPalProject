@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'notification.dart'; 
 
 /// =================== HOME SCREEN ===================
 
@@ -108,20 +109,28 @@ class HomeScreen extends StatelessWidget {
                   const Spacer(),
                   Stack(
                     children: [
-                      Container(
-                        padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          shape: BoxShape.circle,
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(0.05),
-                              blurRadius: 8,
-                              offset: const Offset(0, 3),
-                            ),
-                          ],
+                      InkWell(
+                        borderRadius: BorderRadius.circular(50),
+                        onTap: () {
+                          Navigator.of(context).push(
+                            MaterialPageRoute(builder: (_) => NotificationPage()),
+                          );
+                        },
+                        child: Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            shape: BoxShape.circle,
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.05),
+                                blurRadius: 8,
+                                offset: const Offset(0, 3),
+                              ),
+                            ],
+                          ),
+                          child: const Icon(Icons.notifications_none_rounded),
                         ),
-                        child: const Icon(Icons.notifications_none_rounded),
                       ),
                       Positioned(
                         right: 6,
@@ -134,7 +143,7 @@ class HomeScreen extends StatelessWidget {
                             color: Colors.red,
                           ),
                         ),
-                      )
+                      ),
                     ],
                   ),
                 ],

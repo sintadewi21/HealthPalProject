@@ -14,6 +14,7 @@
 	<string>6.0</string>
 	<key>CFBundleName</key>
 	<string>praktikum1</string>
+	
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>

@@ -11,6 +11,8 @@ dependencies:
   http: ^1.6.0              # Gunakan versi terbaru
   mime: ^2.0.0              # Gunakan versi terbaru
   web_socket_channel: ^3.0.3 # Gunakan versi terbaru
+  intl: ^0.19.0             # Untuk format tanggal dan internasionalisasi
+  image_picker: ^1.2.1
 
 
 environment:

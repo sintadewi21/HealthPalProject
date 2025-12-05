@@ -28,7 +28,7 @@ class MyApp extends StatelessWidget {
     return const MaterialApp(
       title: 'HealthPal App',
       debugShowCheckedModeBanner: false,
-      home: SignUpScreen(), // Mulai dari halaman Sign Up
+      home: const SignUpScreen(), // Mulai dari halaman Sign Up
     );
   }
 }

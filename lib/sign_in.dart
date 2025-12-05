@@ -1,30 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'sign_up.dart'; // Perbaikan import
-
-// --- Placeholder HomeScreen ---
-// (Nanti bisa dipindahkan ke lib/home_screen.dart)
-class HomeScreen extends StatelessWidget {
-  const HomeScreen({super.key});
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFFF5F5FA),
-      appBar: AppBar(
-        title: const Text('HealthPal Home', style: TextStyle(color: Color(0xFF003D5C), fontWeight: FontWeight.bold)),
-        backgroundColor: Colors.white,
-        elevation: 1,
-      ),
-      body: const Center(
-        child: Text(
-          'Welcome to your HealthPal Home Page!',
-          style: TextStyle(fontSize: 18, color: Color(0xFF003D5C)),
-        ),
-      ),
-    );
-  }
-}
-// -----------------------------
+import 'homepage.dart';
 
 // Asumsi global instance 'supabase' sudah tersedia (dari main.dart)
 final supabase = Supabase.instance.client;

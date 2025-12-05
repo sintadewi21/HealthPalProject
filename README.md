@@ -1,3 +1,3 @@
-# praktikum1
+# HealthPal's Project
 
 A new Flutter project.

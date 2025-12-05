@@ -20,6 +20,7 @@ class FillProfileScreen extends StatefulWidget {
 
 class _FillProfileScreenState extends State<FillProfileScreen> {
   // Controller
+  // Controller
   late final TextEditingController _fullNameController;
   final _nicknameController = TextEditingController();
   final _emailController = TextEditingController(); // Email akan diisi otomatis dari Supabase
@@ -41,7 +42,6 @@ class _FillProfileScreenState extends State<FillProfileScreen> {
     // 1. Inisialisasi controller nama dengan nama dari Sign Up
     _fullNameController = TextEditingController(text: widget.initialFullName);
 
-    
     // 2. Ambil data user yang baru login (Auth)
     _currentUser = supabase.auth.currentUser;
 
@@ -164,7 +164,7 @@ class _FillProfileScreenState extends State<FillProfileScreen> {
   }) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: const Color.fromARGB(255, 247, 246, 246),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: Colors.grey.shade300),
         boxShadow: [
@@ -181,14 +181,14 @@ class _FillProfileScreenState extends State<FillProfileScreen> {
         readOnly: readOnly,
         onTap: onTap,
         // EDIT 1: Mengubah warna teks input menjadi abu-abu gelap
-        style: TextStyle(color: Colors.grey[700]),
+        style: TextStyle(color: const Color.fromARGB(255, 50, 50, 50)),
         decoration: InputDecoration(
           hintText: hint,
-          prefixIcon: icon != null ? Icon(icon, color: const Color(0xFF003D5C)) : null,
+          prefixIcon: Icon(icon, color: const Color.fromARGB(255, 179, 179, 179)),
           contentPadding: const EdgeInsets.symmetric(vertical: 16.0, horizontal: 20.0),
           border: InputBorder.none, // Hilangkan border default
           // EDIT 2: Mengubah warna hint text menjadi abu-abu (untuk field readonly/email)
-          hintStyle: TextStyle(color: const Color.fromARGB(255, 0, 0, 0)),
+          hintStyle: TextStyle(color: Colors.grey[500])
         ),
       ),
     );
@@ -198,19 +198,19 @@ class _FillProfileScreenState extends State<FillProfileScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F5FA),
+      backgroundColor: const Color.fromARGB(255, 255, 255, 255),
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
         title: const Text(
           'Fill Profile',
           style: TextStyle(
-            color: Color(0xFF003D5C),
+            color: Color.fromARGB(255, 0, 0, 0),
             fontWeight: FontWeight.bold,
           ),
         ),
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Color(0xFF003D5C)),
+          icon: const Icon(Icons.arrow_back, color: Color.fromARGB(255, 0, 0, 0)),
           onPressed: () {
             // Bisa kembali ke Sign Up atau ke halaman sebelumnya
             Navigator.of(context).pop();
@@ -222,45 +222,17 @@ class _FillProfileScreenState extends State<FillProfileScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: <Widget>[
-            // FOTO PROFIL (Placeholder)
-            Stack(
-              children: [
-                CircleAvatar(
-                  radius: 60,
-                  backgroundColor: Colors.grey.shade200,
-                  child: Icon(
-                    Icons.person,
-                    size: 80,
-                    color: Colors.grey.shade500,
-                  ),
-                ),
-                Positioned(
-                  bottom: 0,
-                  right: 0,
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF003D5C),
-                      shape: BoxShape.circle,
-                      border: Border.all(color: Colors.white, width: 2),
-                    ),
-                    child: const Padding(
-                      padding: EdgeInsets.all(6.0),
-                      child: Icon(
-                        Icons.edit,
-                        color: Colors.white,
-                        size: 20,
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 30),
+            Image.asset(
+                'assets/images/logo.png', // Ganti dengan nama file gambar kamu
+                width: 100, // Sesuaikan ukuran lebar gambar
+                height: 100, // Sesuaikan ukuran tinggi gambar
+              ),
+              const SizedBox(height: 30),
 
             // INPUT: Full Name (Sudah terisi otomatis)
             _buildTextField(
               controller: _fullNameController,
-              hint: 'Full Name (Michael Jordan)',
+              hint: 'Full Name',
               icon: Icons.person_outline,
             ),
             const SizedBox(height: 15),
@@ -285,7 +257,7 @@ class _FillProfileScreenState extends State<FillProfileScreen> {
             // INPUT: Date of Birth
             _buildTextField(
               controller: _dobController,
-              hint: 'Date of Birth (YYYY-MM-DD)',
+              hint: 'Date of Birth',
               icon: Icons.calendar_today_outlined,
               readOnly: true, // Tidak bisa diketik, harus lewat Date Picker
               onTap: _selectDateOfBirth,
@@ -295,7 +267,7 @@ class _FillProfileScreenState extends State<FillProfileScreen> {
             // INPUT: Gender (Dropdown)
             Container(
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: const Color.fromARGB(255, 247, 246, 246),
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(color: Colors.grey.shade300),
                 boxShadow: [
@@ -310,13 +282,12 @@ class _FillProfileScreenState extends State<FillProfileScreen> {
               child: DropdownButtonFormField<String>(
                 value: _selectedGender,
                 decoration: const InputDecoration(
-                  prefixIcon: Icon(Icons.people_outline, color: Color(0xFF003D5C)),
-                  // Hapus contentPadding di sini agar DropdownButton di bawah yang mengatur padding
+                  prefixIcon: Icon(Icons.people_outline, color: const Color.fromARGB(255, 179, 179, 179)),
                   border: InputBorder.none,
                 ),
                 // EDIT 3: Mengubah warna teks yang terpilih (e.g., Male/Female) menjadi abu-abu
                 style: TextStyle(color: Colors.grey[700], fontSize: 16),
-                icon: const Icon(Icons.arrow_drop_down, color: Color(0xFF003D5C)),
+                icon: const Icon(Icons.arrow_drop_down, color: const Color.fromARGB(255, 179, 179, 179)),
                 isExpanded: true, // Pastikan dropdown memenuhi lebar
                 onChanged: (String? newValue) {
                   setState(() {
@@ -330,7 +301,7 @@ class _FillProfileScreenState extends State<FillProfileScreen> {
                   );
                 }).toList(),
                 // EDIT 4: Mengatur padding agar DropdownButton rata dengan TextField
-                padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 0.0),
+                padding: const EdgeInsets.symmetric(horizontal: 0.0, vertical: 10.0),
               ),
             ),
             const SizedBox(height: 40),
@@ -342,10 +313,10 @@ class _FillProfileScreenState extends State<FillProfileScreen> {
               child: ElevatedButton(
                 onPressed: _isLoading ? null : _saveProfile,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF003D5C),
+                  backgroundColor: const Color.fromARGB(255, 3, 33, 48),
                   foregroundColor: Colors.white,
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(40),
                   ),
                   elevation: 5,
                 ),

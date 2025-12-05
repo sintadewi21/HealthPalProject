@@ -15,12 +15,10 @@ class SignUpScreen extends StatefulWidget {
 
 class _SignUpScreenState extends State<SignUpScreen> {
   // Controller untuk menangani input
-  final _nameController = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController(); 
 
   // --- STATE UNTUK MENYIMPAN PESAN ERROR INLINE ---
-  String? _nameError;
   String? _emailError;
   String? _passwordError;
   // ---------------------------------------------
@@ -30,7 +28,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
   
   @override
   void dispose() {
-    _nameController.dispose();
     _emailController.dispose();
     _passwordController.dispose();
     super.dispose();
@@ -38,7 +35,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
 
   // Fungsi untuk membersihkan semua pesan error
   void _clearErrors() {
-    _nameError = null;
     _emailError = null;
     _passwordError = null;
   }
@@ -47,7 +43,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
   void _signUp() async {
     // 1. Ambil nilai dari Controller
     final email = _emailController.text.trim();
-    final name = _nameController.text.trim(); 
     final password = _passwordController.text.trim(); 
     bool hasError = false;
 
@@ -55,12 +50,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
     _clearErrors(); 
 
     // --- 2. VALIDASI LOKAL (sebelum kirim ke Supabase) ---
-    
-    // Validasi Nama
-    if (name.isEmpty) {
-      _nameError = 'Name is required.';
-      hasError = true;
-    }
     
     // Validasi Email: Kosong
     if (email.isEmpty) {
@@ -107,7 +96,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
         // 5. Simpan Data Profil (Nama) ke Tabel 'profiles'
         await supabase
           .from('profiles')
-          .insert({'id': userId, 'full_name': name});
+          .insert({'id': userId, 'email': email});
 
         // FIX: LANGSUNG NAVIGASI ke FillProfileScreen
         Navigator.of(context).pushReplacement(
@@ -143,45 +132,49 @@ class _SignUpScreenState extends State<SignUpScreen> {
   // --- UI HELPER FUNCTIONS ---
   
   Widget _buildTextField({
-    required TextEditingController controller,
-    required String hint,
-    required IconData icon,
-    TextInputType keyboardType = TextInputType.text,
-    bool isPassword = false, 
-  }) {
-    return Container(
+  required TextEditingController controller,
+  required String hint,
+  required IconData icon,
+  TextInputType keyboardType = TextInputType.text,
+  bool isPassword = false, 
+}) {
+  return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(8),
+        color: const Color.fromARGB(255, 247, 246, 246),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey.shade300),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
+            color: Colors.grey.withOpacity(0.05),
             spreadRadius: 1,
-            blurRadius: 5,
-            offset: const Offset(0, 3),
+            blurRadius: 3,
+            offset: const Offset(0, 2),
           ),
-        ],
-      ),
-      child: TextField(
-        controller: controller,
-        obscureText: isPassword,
-        keyboardType: keyboardType,
-        decoration: InputDecoration(
-          hintText: hint,
-          prefixIcon: Icon(icon, color: Colors.grey[600]),
-          
-          // Pastikan border tetap bersih meskipun ada error
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(8),
-            borderSide: BorderSide.none,
-          ),
-          filled: true,
-          fillColor: Colors.white,
-          contentPadding: const EdgeInsets.symmetric(vertical: 15.0, horizontal: 20.0),
+      ],
+    ),
+    child: TextField(
+      controller: controller,
+      obscureText: isPassword,
+      keyboardType: keyboardType,
+      decoration: InputDecoration(
+        hintText: hint,
+        hintStyle: TextStyle(color: Colors.grey[500]), // Warna hint text (abunya)
+        prefixIcon: Icon(icon, color: const Color.fromARGB(255, 179, 179, 179)),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
+          borderSide: BorderSide.none,
         ),
+        filled: true,
+        fillColor: const Color.fromARGB(255, 250, 250, 250),
+        contentPadding: const EdgeInsets.symmetric(vertical: 15.0, horizontal: 20.0),
       ),
-    );
-  }
+      style: TextStyle(
+        color: const Color.fromARGB(255, 50, 50, 50), // Warna teks input (abunya)
+        fontSize: 16,
+      ),
+    ),
+  );
+}
 
   // --- BUILD METHOD ---
 
@@ -189,7 +182,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
   Widget build(BuildContext context) {
     // KITA TAMBAHKAN BACKGROUND COLOR SPESIFIK DI SINI (mirip di screenshot)
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F5FA), // Warna lavender/grey muda (background aplikasi)
+      backgroundColor: const Color.fromARGB(255, 255, 255, 255), // Warna lavender/grey muda (background aplikasi)
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -201,15 +194,10 @@ class _SignUpScreenState extends State<SignUpScreen> {
             mainAxisAlignment: MainAxisAlignment.center,
             children: <Widget>[
               // LOGO HEALTHPAL
-              const Icon(
-                Icons.health_and_safety,
-                size: 80,
-                color: Color(0xFF003D5C), 
-              ),
-              const SizedBox(height: 10),
-              const Text(
-                'HealthPal',
-                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+              Image.asset(
+                'assets/images/logo.png', // Ganti dengan nama file gambar kamu
+                width: 100, // Sesuaikan ukuran lebar gambar
+                height: 100, // Sesuaikan ukuran tinggi gambar
               ),
               const SizedBox(height: 30),
               const Text(
@@ -222,27 +210,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
                 style: TextStyle(fontSize: 16, color: Colors.grey),
               ),
               const SizedBox(height: 30),
-
-              // INPUT: Your Name (TEKS ERROR DI TAMPILAN BACKGROUND APP)
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _buildTextField(
-                    controller: _nameController,
-                    hint: 'Full Name',
-                    icon: Icons.person_outline,
-                  ),
-                  if (_nameError != null)
-                    Padding(
-                      padding: const EdgeInsets.only(left: 12.0, top: 4.0),
-                      child: Text(
-                        _nameError!,
-                        style: const TextStyle(color: Colors.red, fontSize: 13),
-                      ),
-                    ),
-                ],
-              ),
-              const SizedBox(height: 15),
 
               // INPUT: Your Email (TEKS ERROR DI TAMPILAN BACKGROUND APP)
               Column(
@@ -295,10 +262,10 @@ class _SignUpScreenState extends State<SignUpScreen> {
                 child: ElevatedButton(
                   onPressed: _isLoading ? null : _signUp, 
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF003D5C), 
+                    backgroundColor: const Color.fromARGB(255, 3, 33, 48),
                     foregroundColor: Colors.white,
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
+                      borderRadius: BorderRadius.circular(40),
                     ),
                   ),
                   child: _isLoading

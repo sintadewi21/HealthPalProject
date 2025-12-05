@@ -131,10 +131,10 @@ class _SignInScreenState extends State<SignInScreen> {
         borderRadius: BorderRadius.circular(8),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
+            color: const Color.fromARGB(255, 183, 183, 183),
             spreadRadius: 1,
-            blurRadius: 5,
-            offset: const Offset(0, 3),
+            blurRadius: 3,
+            offset: const Offset(0, 1),
           ),
         ],
       ),
@@ -144,14 +144,19 @@ class _SignInScreenState extends State<SignInScreen> {
         keyboardType: keyboardType,
         decoration: InputDecoration(
           hintText: hint,
-          prefixIcon: Icon(icon, color: Colors.grey[600]),
+          hintStyle: TextStyle(color: Colors.grey[500]),
+          prefixIcon: Icon(icon, color: const Color.fromARGB(255, 179, 179, 179)),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(8),
             borderSide: BorderSide.none,
           ),
           filled: true,
-          fillColor: Colors.white,
+          fillColor: const Color.fromARGB(255, 250, 250, 250),          
           contentPadding: const EdgeInsets.symmetric(vertical: 15.0, horizontal: 20.0),
+        ),
+        style: TextStyle(
+          color: const Color.fromARGB(255, 50, 50, 50), // Warna teks input (abunya)
+          fontSize: 16,
         ),
       ),
     );
@@ -160,7 +165,7 @@ class _SignInScreenState extends State<SignInScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F5FA),
+      backgroundColor: const Color.fromARGB(255, 255, 255, 255), // Warna lavender/grey muda (background aplikasi)
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -171,16 +176,10 @@ class _SignInScreenState extends State<SignInScreen> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: <Widget>[
-              // LOGO HEALTHPAL
-              const Icon(
-                Icons.health_and_safety,
-                size: 80,
-                color: Color(0xFF003D5C), 
-              ),
-              const SizedBox(height: 10),
-              const Text(
-                'HealthPal',
-                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+              Image.asset(
+                'assets/images/logo.png', // Ganti dengan nama file gambar kamu
+                width: 100, // Sesuaikan ukuran lebar gambar
+                height: 100, // Sesuaikan ukuran tinggi gambar
               ),
               const SizedBox(height: 30),
               const Text(
@@ -245,10 +244,10 @@ class _SignInScreenState extends State<SignInScreen> {
                 child: ElevatedButton(
                   onPressed: _isLoading ? null : _signIn, 
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF003D5C), 
+                    backgroundColor: const Color.fromARGB(255, 3, 33, 48),
                     foregroundColor: Colors.white,
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
+                      borderRadius: BorderRadius.circular(40),
                     ),
                   ),
                   child: _isLoading

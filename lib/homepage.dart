@@ -34,14 +34,14 @@ class _SuccessScreenState extends State<SuccessScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       // Background abu-abu muda
-      backgroundColor: Colors.grey[300], 
+      backgroundColor: const Color.fromARGB(255, 121, 121, 121), 
       body: Center(
         child: Container(
           width: MediaQuery.of(context).size.width * 0.8, // Lebar 80%
           padding: const EdgeInsets.all(30.0),
           decoration: BoxDecoration(
             color: Colors.white,
-            borderRadius: BorderRadius.circular(20),
+            borderRadius: BorderRadius.circular(35),
             boxShadow: [
               BoxShadow(
                 color: Colors.black.withOpacity(0.1),
@@ -57,13 +57,14 @@ class _SuccessScreenState extends State<SuccessScreen> {
               Container(
                 padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF5ABCB0), // Warna teal/hijau muda
+                  color: const Color.fromARGB(255, 135, 194, 184),
                   shape: BoxShape.circle,
                 ),
                 child: const Icon(
                   Icons.check,
                   color: Colors.white,
                   size: 40,
+                  weight: 60,
                 ),
               ),
               const SizedBox(height: 30),
@@ -99,10 +100,10 @@ class _SuccessScreenState extends State<SuccessScreen> {
                 child: ElevatedButton(
                   onPressed: _navigateToHome, // Hanya navigasi saat tombol ditekan
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF003D5C), // Warna biru gelap
+                    backgroundColor: const Color.fromARGB(255, 3, 33, 48),
                     foregroundColor: Colors.white,
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
+                      borderRadius: BorderRadius.circular(40),
                     ),
                   ),
                   child: const Text(

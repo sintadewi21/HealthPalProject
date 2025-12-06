@@ -494,14 +494,15 @@ class _SuccessScreenState extends State<SuccessScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey[300],
+      // Background abu-abu muda
+      backgroundColor: const Color.fromARGB(255, 121, 121, 121), 
       body: Center(
         child: Container(
           width: MediaQuery.of(context).size.width * 0.8,
           padding: const EdgeInsets.all(30.0),
           decoration: BoxDecoration(
             color: Colors.white,
-            borderRadius: BorderRadius.circular(20),
+            borderRadius: BorderRadius.circular(35),
             boxShadow: [
               BoxShadow(
                 color: Colors.black.withOpacity(0.1),
@@ -515,8 +516,8 @@ class _SuccessScreenState extends State<SuccessScreen> {
             children: <Widget>[
               Container(
                 padding: const EdgeInsets.all(20),
-                decoration: const BoxDecoration(
-                  color: Color(0xFF5ABCB0),
+                decoration: BoxDecoration(
+                  color: const Color.fromARGB(255, 135, 194, 184),
                   shape: BoxShape.circle,
                 ),
                 child: const Icon(
@@ -551,10 +552,10 @@ class _SuccessScreenState extends State<SuccessScreen> {
                 child: ElevatedButton(
                   onPressed: _navigateToHome,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF003D5C),
+                    backgroundColor: const Color.fromARGB(255, 3, 33, 48),
                     foregroundColor: Colors.white,
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
+                      borderRadius: BorderRadius.circular(40),
                     ),
                   ),
                   child: const Text(

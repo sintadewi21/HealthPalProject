@@ -1,6 +1,7 @@
 #
 HealthPal Flutter project.
 By Group 7 Tekber B
+>>>>>>> 61895b51cfdd70aa9680f1b5e852cd985ac56256
 
 Diva Nesia Putri – 5026231020
 Tsanita Shafa H – 5026231088

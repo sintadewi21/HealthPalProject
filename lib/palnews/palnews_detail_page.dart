@@ -1,5 +1,3 @@
-// lib/palnews/palnews_detail_page.dart
-
 import 'package:flutter/material.dart';
 import 'palnews_model.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
@@ -17,52 +15,55 @@ class PalNewsDetailPage extends StatelessWidget {
       body: SafeArea(
         child: Column(
           children: [
+            // ===== HEADER DETAIL =====
             Padding(
               padding:
                   const EdgeInsets.symmetric(horizontal: 20.0, vertical: 12),
               child: Row(
                 children: [
                   IconButton(
-                    icon: const Icon(Icons.arrow_back_ios_new, size: 18),
+                    icon: const Icon(Icons.arrow_back, size: 22),
                     onPressed: () => Navigator.of(context).pop(),
                   ),
-                  const SizedBox(width: 4),
-                  Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                        color: Colors.black.withOpacity(0.08),
+                  Expanded(
+                    child: Center(
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                color: Colors.black.withOpacity(0.08),
+                              ),
+                              color: Colors.white,
+                            ),
+                            child: Icon(
+                              Icons.description_outlined,
+                              size: 20,
+                              color: theme.primaryColor,
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            'PalNews',
+                            style: TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.w700,
+                              color: Colors.black.withOpacity(0.9),
+                            ),
+                          ),
+                        ],
                       ),
-                      color: Colors.white,
-                    ),
-                    child: Icon(
-                      Icons.article_outlined,
-                      size: 20,
-                      color: theme.primaryColor,
                     ),
                   ),
-                  const SizedBox(width: 8),
-                  Text(
-                    'PalNews',
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.w700,
-                      color: Colors.black.withOpacity(0.9),
-                    ),
-                  ),
-                  const Spacer(),
-                  IconButton(
-                    icon: const Icon(Icons.bookmark_border),
-                    onPressed: () {},
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.more_horiz),
-                    onPressed: () {},
-                  ),
+                  const SizedBox(width: 48), // penyeimbang space kanan
                 ],
               ),
             ),
+
+            // ===== HEADER IMAGE + TITLE =====
             Padding(
               padding:
                   const EdgeInsets.symmetric(horizontal: 20.0, vertical: 4),
@@ -116,6 +117,7 @@ class PalNewsDetailPage extends StatelessWidget {
                 ),
               ),
             ),
+
             const SizedBox(height: 8),
             Container(
               margin: const EdgeInsets.symmetric(horizontal: 20),
@@ -126,9 +128,12 @@ class PalNewsDetailPage extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 8),
+
+            // ===== KONTEN MARKDOWN =====
             Expanded(
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
                 child: Markdown(
                   data: news.content,
                   styleSheet: MarkdownStyleSheet(

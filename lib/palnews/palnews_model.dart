@@ -32,7 +32,14 @@ class PalNewsItem {
   }
 
   String get subtitle {
-    final plain = content.replaceAll('\n', ' ');
+    // hapus heading markdown & bullet sederhana
+    var plain = content
+        .replaceAll('\r', ' ')
+        .replaceAll('\n', ' ')
+        .replaceAll(RegExp(r'#{1,6}\s*'), '') // #### heading
+        .replaceAll(RegExp(r'-\s*'), ''); // bullet "-"
+    plain = plain.replaceAll(RegExp(r'\s+'), ' ').trim();
+
     if (plain.length <= 100) return plain;
     return plain.substring(0, 100) + '...';
   }

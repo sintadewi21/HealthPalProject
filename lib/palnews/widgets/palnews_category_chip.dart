@@ -1,6 +1,6 @@
-// lib/palnews/widgets/palnews_category_chip.dart
-
 import 'package:flutter/material.dart';
+
+const primaryColor = Color(0xFF1C2A3A);
 
 class PalNewsCategoryChip extends StatelessWidget {
   final String label;
@@ -16,18 +16,16 @@ class PalNewsCategoryChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14.0, vertical: 8.0),
+        padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 8.0),
         decoration: BoxDecoration(
-          color: isSelected ? theme.primaryColor : Colors.white,
+          color: isSelected ? primaryColor : Colors.white, // bg berubah
           borderRadius: BorderRadius.circular(24),
           border: Border.all(
-            color: isSelected
-                ? theme.primaryColor
-                : Colors.black.withOpacity(0.08),
+            color: const Color(0xFF1F2933), // border gelap utk SEMUA chip
+            width: 1,
           ),
         ),
         child: Text(

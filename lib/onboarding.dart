@@ -63,9 +63,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   }
 
   void _goToHome() {
-    Navigator.of(context).pushReplacement(
-      MaterialPageRoute(builder: (_) => const HomeScreen()),
-    );
+    Navigator.of(context).pushReplacementNamed('/signin');
   }
 
   @override
@@ -236,14 +234,3 @@ class _OnboardingData {
   });
 }
 
-// Dummy homepage sementara
-class HomeScreen extends StatelessWidget {
-  const HomeScreen({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return const Scaffold(
-      body: Center(child: Text('Homepage (coming soon)')),
-    );
-  }
-}

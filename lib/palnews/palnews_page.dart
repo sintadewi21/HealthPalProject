@@ -3,6 +3,9 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../homepage.dart';          // ⬅️ untuk navigasi ke Home
+import '../location_screen.dart';   // ⬅️ untuk navigasi ke Location
+
 import 'palnews_model.dart';
 import 'palnews_repository.dart';
 import 'palnews_detail_page.dart';
@@ -28,6 +31,9 @@ class _PalNewsPageState extends State<PalNewsPage> {
   final PageController _trendingController = PageController();
   int _currentTrendingIndex = 0;
 
+  // ⬇️ NAVBAR STATE (tab PalNews aktif)
+  int _currentIndex = 2;
+
   @override
   void initState() {
     super.initState();
@@ -47,10 +53,81 @@ class _PalNewsPageState extends State<PalNewsPage> {
     );
   }
 
+  // ⬇️ SAMA SEPERTI DI HOMESCREEN
+  Widget _buildNavIcon(IconData icon, int index) {
+    final bool isActive = _currentIndex == index;
+
+    return Container(
+      padding: const EdgeInsets.all(10),
+      decoration: BoxDecoration(
+        color: isActive ? const Color(0xFFF1F3F6) : Colors.transparent,
+        shape: BoxShape.circle,
+      ),
+      child: Icon(
+        icon,
+        size: 24,
+        color: isActive ? const Color(0xFF39434F) : Colors.grey,
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
+
+      // =============== NAVBAR PALING BAWAH ===============
+      bottomNavigationBar: BottomNavigationBar(
+        currentIndex: _currentIndex,
+        type: BottomNavigationBarType.fixed,
+        backgroundColor: Colors.white,
+        elevation: 0,
+        showSelectedLabels: false,
+        showUnselectedLabels: false,
+        onTap: (index) {
+          setState(() => _currentIndex = index);
+
+          if (index == 0) {
+            // ke Home
+            Navigator.of(context).pushReplacement(
+              MaterialPageRoute(builder: (_) => const HomeScreen()),
+            );
+          } else if (index == 1) {
+            // ke Location
+            Navigator.of(context).pushReplacement(
+              MaterialPageRoute(builder: (_) => const LocationScreen()),
+            );
+          } else if (index == 2) {
+            // PalNews (lagi di sini) → nggak perlu apa-apa
+          }
+          // index 3 = Calendar (nanti)
+          // index 4 = Profile (nanti)
+        },
+        items: [
+          BottomNavigationBarItem(
+            icon: _buildNavIcon(Icons.home_rounded, 0),
+            label: '',
+          ),
+          BottomNavigationBarItem(
+            icon: _buildNavIcon(Icons.location_on_outlined, 1),
+            label: '',
+          ),
+          BottomNavigationBarItem(
+            icon: _buildNavIcon(Icons.article_outlined, 2),
+            label: '',
+          ),
+          BottomNavigationBarItem(
+            icon: _buildNavIcon(Icons.calendar_today_outlined, 3),
+            label: '',
+          ),
+          BottomNavigationBarItem(
+            icon: _buildNavIcon(Icons.person_outline, 4),
+            label: '',
+          ),
+        ],
+      ),
+
+      // ================== BODY PALNEWS ==================
       body: SafeArea(
         child: Column(
           children: [
@@ -80,7 +157,6 @@ class _PalNewsPageState extends State<PalNewsPage> {
                     ),
                   ],
                 ),
-
               ),
             ),
 
@@ -175,7 +251,8 @@ class _PalNewsPageState extends State<PalNewsPage> {
                   }
 
                   // --- TRENDING: 3 terbaru, HANYA DI KATEGORI ALL ---
-                  final bool showTrending = chipIndex == 0 && filtered.isNotEmpty;
+                  final bool showTrending =
+                      chipIndex == 0 && filtered.isNotEmpty;
                   List<PalNewsItem> trendingTop = [];
                   if (showTrending) {
                     final trending = [...filtered]
@@ -186,7 +263,7 @@ class _PalNewsPageState extends State<PalNewsPage> {
                   return Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // ===== CATEGORY CHIPS (tetap di atas) =====
+                      // ===== CATEGORY CHIPS =====
                       Padding(
                         padding: const EdgeInsets.only(
                           left: 20,
@@ -219,7 +296,7 @@ class _PalNewsPageState extends State<PalNewsPage> {
                         ),
                       ),
 
-                      // ===== LISTVIEW: Trending section (opsional) + semua berita =====
+                      // ===== LISTVIEW: Trending section + semua berita =====
                       Expanded(
                         child: ListView.builder(
                           padding: const EdgeInsets.symmetric(
@@ -258,7 +335,7 @@ class _PalNewsPageState extends State<PalNewsPage> {
     );
   }
 
-  // ====== SECTION WIDGET: ON TRENDING + CAROUSEL ======
+  // ====== SECTION: ON TRENDING + CAROUSEL ======
   Widget _buildTrendingSection(List<PalNewsItem> trendingTop) {
     if (trendingTop.isEmpty) return const SizedBox.shrink();
 

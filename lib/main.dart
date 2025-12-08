@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import 'onboarding.dart';
+import 'sign_in.dart';
 import 'sign_up.dart';
-import 'palnews/palnews_page.dart';
+import 'homepage.dart';
 
-// Global instance untuk kemudahan akses, kalau mau dipakai di tempat lain
+// Supabase client global
 final supabase = Supabase.instance.client;
 
 Future<void> main() async {
@@ -31,11 +33,16 @@ class MyApp extends StatelessWidget {
       title: 'HealthPal App',
       debugShowCheckedModeBanner: false,
 
-      // untuk debug PalNews:
-      home: const PalNewsPage(),
+      // ➜ halaman pertama
+      initialRoute: '/onboarding',
 
-      // nanti kalau sudah beres dan mau balik ke alur awal, ganti lagi jadi:
-      // home: const SignUpScreen(),
+      // ➜ daftar route
+      routes: {
+        '/onboarding': (context) => const OnboardingScreen(),
+        '/signin': (context) => const SignInScreen(),
+        '/signup': (context) => const SignUpScreen(),
+        '/home': (context) => const HomeScreen(),
+      },
     );
   }
 }

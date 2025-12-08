@@ -36,11 +36,31 @@ class PalNewsNewsCard extends StatelessWidget {
           children: [
             // background image
             Positioned.fill(
-              child: Image.asset(
-                news.image,
-                fit: BoxFit.cover,
-              ),
+              child: news.image.isNotEmpty
+                  ? Image.network(
+                      news.image,
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, __, ___) {
+                        return Container(
+                          color: Colors.grey[300],
+                          child: const Icon(
+                            Icons.image_not_supported,
+                            color: Colors.black45,
+                            size: 40,
+                          ),
+                        );
+                      },
+                    )
+                  : Container(
+                      color: Colors.grey[300],
+                      child: const Icon(
+                        Icons.image,
+                        color: Colors.black45,
+                        size: 40,
+                      ),
+                    ),
             ),
+
             // overlay gradient
             Positioned.fill(
               child: Container(
@@ -101,22 +121,23 @@ class PalNewsNewsCard extends StatelessWidget {
                     child: ElevatedButton(
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.white,
-                        foregroundColor: theme.primaryColor,
+                        foregroundColor: Colors.black, // ⭐ tulisan hitam
                         padding: const EdgeInsets.symmetric(
                           horizontal: 18,
                           vertical: 8,
                         ),
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(18),
+                          borderRadius: BorderRadius.circular(6), // ⭐ radius 6
                         ),
                         elevation: 0,
                       ),
-                      onPressed: onTap, // 👉 cuma tombol ini yang buka berita
+                      onPressed: onTap,
                       child: const Text(
                         'Read More',
                         style: TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.w600,
+                          color: Colors.black, // ⭐ pastikan teks hitam
                         ),
                       ),
                     ),

@@ -78,11 +78,31 @@ class PalNewsDetailPage extends StatelessWidget {
                   child: Stack(
                     children: [
                       Positioned.fill(
-                        child: Image.asset(
-                          news.image,
-                          fit: BoxFit.cover,
-                        ),
+                        child: news.image.isNotEmpty
+                            ? Image.network(
+                                news.image,
+                                fit: BoxFit.cover,
+                                errorBuilder: (_, __, ___) {
+                                  return Container(
+                                    color: Colors.grey[300],
+                                    child: const Icon(
+                                      Icons.broken_image,
+                                      color: Colors.black45,
+                                      size: 50,
+                                    ),
+                                  );
+                                },
+                              )
+                            : Container(
+                                color: Colors.grey[300],
+                                child: const Icon(
+                                  Icons.image,
+                                  color: Colors.black45,
+                                  size: 50,
+                                ),
+                              ),
                       ),
+
                       Positioned.fill(
                         child: Container(
                           decoration: BoxDecoration(

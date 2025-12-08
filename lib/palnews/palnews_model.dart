@@ -27,7 +27,7 @@ class PalNewsItem {
       source: (json['source'] as String?) ?? '',
       category: (json['category'] as String?) ?? '',
       publishedAt: DateTime.parse(json['published_at'] as String),
-      image: 'assets/images/news_placeholder.jpg',
+      image: (json['image_url'] as String?) ?? '',
     );
   }
 

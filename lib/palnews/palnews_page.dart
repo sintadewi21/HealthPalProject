@@ -63,28 +63,11 @@ class _PalNewsPageState extends State<PalNewsPage> {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(
-                          color: Colors.black.withOpacity(0.08),
-                        ),
-                        color: Colors.white,
-                      ),
-                      child: Image.asset(
-                        'assets/images/iconpalnews.png',
-                        width: 18,
-                        height: 18,
-                        fit: BoxFit.contain,
-                        errorBuilder: (_, __, ___) {
-                          return const Icon(
-                            Icons.description_outlined,
-                            size: 20,
-                            color: primaryColor,
-                          );
-                        },
-                      ),
+                    Image.asset(
+                      'assets/images/iconpalnews.png',
+                      width: 26,
+                      height: 26,
+                      fit: BoxFit.contain,
                     ),
                     const SizedBox(width: 8),
                     const Text(
@@ -97,6 +80,7 @@ class _PalNewsPageState extends State<PalNewsPage> {
                     ),
                   ],
                 ),
+
               ),
             ),
 
@@ -352,9 +336,9 @@ class _PalNewsPageState extends State<PalNewsPage> {
         ),
         const SizedBox(height: 8),
         Container(
-          height: 3,
+          height: 5,
           decoration: BoxDecoration(
-            color: primaryColor,
+            color: const Color(0xFF1B266A),
             borderRadius: BorderRadius.circular(2),
           ),
         ),

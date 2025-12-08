@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'docdetails.dart';
 
 /// ========= MODEL DOKTER =========
 
@@ -12,6 +13,8 @@ class Doctor {
   final double rating;
   final int? reviews;           // optional, kalau belum ada di DB boleh null
   final String profileImageUrl;
+  final String? experience;        // years of experience
+  final String? education;      // education background
 
   const Doctor({
     required this.id,
@@ -22,6 +25,8 @@ class Doctor {
     required this.rating,
     required this.profileImageUrl,
     this.reviews,
+    this.experience,
+    this.education,
   });
 }
 
@@ -99,7 +104,7 @@ class _AllDoctorsScreenState extends State<AllDoctorsScreen> {
       final response = await _supabase
           .from('doctors')
           .select(
-            'doctor_id, name, specialization, profile_picture, rating, clinics(clinic_name, city, country)',
+            'doctor_id, name, specialization, profile_picture, rating, experience, education, clinics(clinic_name, city, country)',
           );
 
       final List data = response as List;
@@ -107,7 +112,7 @@ class _AllDoctorsScreenState extends State<AllDoctorsScreen> {
       _allDoctors = data.map<Doctor>((raw) {
         final clinic = raw['clinics'] as Map<String, dynamic>?;
 
-        final clinicName = clinic?['name'] as String? ?? 'Unknown Clinic';
+        final clinicName = clinic?['clinic_name'] as String? ?? 'Unknown Clinic';
         final city = clinic?['city'] as String? ?? '';
         final country = clinic?['country'] as String? ?? '';
 
@@ -129,6 +134,8 @@ class _AllDoctorsScreenState extends State<AllDoctorsScreen> {
           rating: rating,
           profileImageUrl: raw['profile_picture'] as String? ??
               'https://via.placeholder.com/150', // fallback
+          experience: raw['experience'] as String?,
+          education: raw['education'] as String?,
           // kalau kamu nanti nambah kolom "reviews" di tabel doctors:
           // reviews: raw['reviews'] as int?,
           reviews: null,
@@ -331,7 +338,17 @@ class _AllDoctorsScreenState extends State<AllDoctorsScreen> {
                             const SizedBox(height: 12),
                         itemBuilder: (context, index) {
                           final d = doctors[index];
-                          return _DoctorCard(doctor: d);
+                          return _DoctorCard(
+                            doctor: d,
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => DocDetails(doctor: d),
+                                ),
+                              );
+                            },
+                          );
                         },
                       ),
           ),
@@ -345,126 +362,130 @@ class _AllDoctorsScreenState extends State<AllDoctorsScreen> {
 
 class _DoctorCard extends StatelessWidget {
   final Doctor doctor;
+  final VoidCallback? onTap;
 
-  const _DoctorCard({required this.doctor});
+  const _DoctorCard({required this.doctor, this.onTap});
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      elevation: 0.5,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(18),
-      ),
-      clipBehavior: Clip.antiAlias,
-      child: Container(
-        color: Colors.white,
-        padding: const EdgeInsets.all(10),
-        child: Row(
-          children: [
-            // Foto dokter
-            ClipRRect(
-              borderRadius: BorderRadius.circular(16),
-              child: Container(
-                width: 70,
-                height: 80,
-                color: Colors.grey.shade200,
-                child: Image.network(
-                  doctor.profileImageUrl,
-                  fit: BoxFit.cover,
+    return GestureDetector(
+      onTap: onTap,
+      child: Card(
+        elevation: 0.5,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(18),
+        ),
+        clipBehavior: Clip.antiAlias,
+        child: Container(
+          color: Colors.white,
+          padding: const EdgeInsets.all(10),
+          child: Row(
+            children: [
+              // Foto dokter
+              ClipRRect(
+                borderRadius: BorderRadius.circular(16),
+                child: Container(
+                  width: 70,
+                  height: 80,
+                  color: Colors.grey.shade200,
+                  child: Image.network(
+                    doctor.profileImageUrl,
+                    fit: BoxFit.cover,
+                  ),
                 ),
               ),
-            ),
-            const SizedBox(width: 12),
+              const SizedBox(width: 12),
 
-            // Info
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Nama + love
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Expanded(
-                        child: Text(
-                          doctor.name,
-                          style: const TextStyle(
-                            fontSize: 15,
-                            fontWeight: FontWeight.w700,
+              // Info
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Nama + love
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                          child: Text(
+                            doctor.name,
+                            style: const TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w700,
+                            ),
                           ),
                         ),
-                      ),
-                      const SizedBox(width: 4),
-                      Icon(
-                        Icons.favorite_border,
-                        size: 18,
-                        color: Colors.grey.shade500,
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    doctor.specialization,
-                    style: const TextStyle(
-                      fontSize: 13,
-                      color: Colors.black87,
-                      fontWeight: FontWeight.w500,
+                        const SizedBox(width: 4),
+                        Icon(
+                          Icons.favorite_border,
+                          size: 18,
+                          color: Colors.grey.shade500,
+                        ),
+                      ],
                     ),
-                  ),
-                  const SizedBox(height: 4),
-                  Row(
-                    children: [
-                      const Icon(
-                        Icons.location_on_outlined,
-                        size: 14,
-                        color: Colors.grey,
+                    const SizedBox(height: 4),
+                    Text(
+                      doctor.specialization,
+                      style: const TextStyle(
+                        fontSize: 13,
+                        color: Colors.black87,
+                        fontWeight: FontWeight.w500,
                       ),
-                      const SizedBox(width: 4),
-                      Expanded(
-                        child: Text(
-                          '${doctor.clinicName}, ${doctor.location}',
-                          style: const TextStyle(
-                            fontSize: 11,
-                            color: Colors.grey,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 4),
+                    Row(
+                      children: [
+                        const Icon(
+                          Icons.location_on_outlined,
+                          size: 14,
+                          color: Colors.grey,
                         ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 6),
-                  Row(
-                    children: [
-                      const Icon(
-                        Icons.star,
-                        color: Color(0xFFFFA500),
-                        size: 14,
-                      ),
-                      const SizedBox(width: 4),
-                      Text(
-                        doctor.rating.toStringAsFixed(1),
-                        style: const TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                      if (doctor.reviews != null) ...[
-                        const SizedBox(width: 6),
-                        Text(
-                          '${doctor.reviews} Reviews',
-                          style: const TextStyle(
-                            fontSize: 11,
-                            color: Colors.grey,
+                        const SizedBox(width: 4),
+                        Expanded(
+                          child: Text(
+                            '${doctor.clinicName}, ${doctor.location}',
+                            style: const TextStyle(
+                              fontSize: 11,
+                              color: Colors.grey,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                           ),
                         ),
                       ],
-                    ],
-                  ),
-                ],
+                    ),
+                    const SizedBox(height: 6),
+                    Row(
+                      children: [
+                        const Icon(
+                          Icons.star,
+                          color: Color(0xFFFFA500),
+                          size: 14,
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          doctor.rating.toStringAsFixed(1),
+                          style: const TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        if (doctor.reviews != null) ...[
+                          const SizedBox(width: 6),
+                          Text(
+                            '${doctor.reviews} Reviews',
+                            style: const TextStyle(
+                              fontSize: 11,
+                              color: Colors.grey,
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ],
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

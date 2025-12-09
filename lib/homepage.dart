@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'notification.dart';
 import 'location_screen.dart'; // <-- IMPORT FILE BARU
 import 'all_doctors_screen.dart';
+import 'palnews/palnews_page.dart';
 
 /// =================== HOME SCREEN ===================
 
@@ -133,15 +134,18 @@ class _HomeScreenState extends State<HomeScreen> {
 
           if (index == 1) {
             // TAB LOCATION → BUKA LOCATION SCREEN
-            Navigator.of(
-              context,
-            ).push(MaterialPageRoute(builder: (_) => const LocationScreen()));
+            Navigator.of(context).push(
+              MaterialPageRoute(builder: (_) => const LocationScreen()),
+            );
+          } else if (index == 2) {
+            // TAB TENGAH → PALNEWS
+            Navigator.of(context).push(
+              MaterialPageRoute(builder: (_) => const PalNewsPage()),
+            );
           }
-
           // index 0 = Home (stay di sini)
-          // index 2 = Records / Articles (nanti bisa kamu bikin)
-          // index 3 = Calendar
-          // index 4 = Profile
+          // index 3 = Calendar (nanti)
+          // index 4 = Profile (nanti)
         },
         items: [
           BottomNavigationBarItem(

@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'book_appointment_page.dart';
+import 'all_doctors_screen.dart'; // Import the Doctor model
 
 // Page 1: Doctor Details
 class DocDetails extends StatelessWidget {
-  const DocDetails ({Key? key}) : super(key: key);
+  final Doctor doctor;
+
+  const DocDetails({Key? key, required this.doctor}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -49,7 +52,7 @@ class DocDetails extends StatelessWidget {
                     child: ClipRRect(
                       borderRadius: BorderRadius.circular(12),
                       child: Image.network(
-                        'https://via.placeholder.com/80',
+                        doctor.profileImageUrl,
                         fit: BoxFit.cover,
                         errorBuilder: (context, error, stackTrace) {
                           return const Icon(Icons.person, size: 40);
@@ -62,31 +65,35 @@ class DocDetails extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text(
-                          'Dr. David Patel',
-                          style: TextStyle(
+                        Text(
+                          doctor.name,
+                          style: const TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.bold,
                           ),
                         ),
                         const SizedBox(height: 4),
-                        const Text(
-                          'Cardiologist',
-                          style: TextStyle(
+                        Text(
+                          doctor.specialization,
+                          style: const TextStyle(
                             color: Colors.grey,
                             fontSize: 14,
                           ),
                         ),
                         const SizedBox(height: 4),
                         Row(
-                          children: const [
-                            Icon(Icons.location_on, size: 14, color: Colors.grey),
-                            SizedBox(width: 4),
-                            Text(
-                              'Golden Cardiology Center',
-                              style: TextStyle(
-                                color: Colors.grey,
-                                fontSize: 12,
+                          children: [
+                            const Icon(Icons.location_on, size: 14, color: Colors.grey),
+                            const SizedBox(width: 4),
+                            Expanded(
+                              child: Text(
+                                '${doctor.clinicName}, ${doctor.location}',
+                                style: const TextStyle(
+                                  color: Colors.grey,
+                                  fontSize: 12,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
                               ),
                             ),
                           ],
@@ -105,9 +112,9 @@ class DocDetails extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.spaceAround,
                 children: [
                   _buildStatItem(Icons.people, '2,000+', 'patients'),
-                  _buildStatItem(Icons.work, '10+', 'experience'),
-                  _buildStatItem(Icons.star, '5', 'rating'),
-                  _buildStatItem(Icons.chat, '1,872', 'reviews'),
+                  _buildStatItem(Icons.work, doctor.experience != null ? '${doctor.experience}+' : 'N/A', 'experience'),
+                  _buildStatItem(Icons.star, doctor.rating.toStringAsFixed(1), 'rating'),
+                  _buildStatItem(Icons.chat, doctor.reviews != null ? '${doctor.reviews}' : 'N/A', 'reviews'),
                 ],
               ),
             ),
@@ -129,7 +136,7 @@ class DocDetails extends StatelessWidget {
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    'Dr. David Patel, a dedicated cardiologist, brings a wealth of experience to Golden Gate Cardiology Center in Golden Gate, CA. view more',
+                    '${doctor.name}, a specialist in ${doctor.specialization.toLowerCase()}, brings a wealth of experience to ${doctor.clinicName} in ${doctor.location}. Studied at${doctor.education != null ? ' ${doctor.education}.' : ''}',
                     style: TextStyle(
                       color: Colors.grey[700],
                       fontSize: 14,
@@ -270,7 +277,7 @@ class DocDetails extends StatelessWidget {
           onPressed: () {
             Navigator.push(
               context,
-              MaterialPageRoute(builder: (context) => const BookAppointmentPage()),
+              MaterialPageRoute(builder: (context) => BookAppointmentPage(doctor: doctor)),
             );
           },
           style: ElevatedButton.styleFrom(

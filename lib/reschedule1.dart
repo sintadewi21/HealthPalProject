@@ -1,30 +1,30 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'all_doctors_screen.dart'; // Import the Doctor model
-import 'reschedule1.dart'; // Import the RescheduleAppointmentPage
+import 'package:HealthPal/reschedule2.dart';
 
-class BookAppointmentPage extends StatefulWidget {
+class RescheduleAppointmentPage extends StatefulWidget {
   final Doctor doctor;
-  final String? appointmentId; // Optional for editing existing appointment
+  final String appointmentId;
 
-  const BookAppointmentPage({Key? key, required this.doctor, this.appointmentId}) : super(key: key);
+  const RescheduleAppointmentPage({Key? key, required this.doctor, required this.appointmentId}) : super(key: key);
 
   @override
-  State<BookAppointmentPage> createState() => _BookAppointmentPageState();
+  State<RescheduleAppointmentPage> createState() => _RescheduleAppointmentPageState();
 }
 
-class _BookAppointmentPageState extends State<BookAppointmentPage> {
+class _RescheduleAppointmentPageState extends State<RescheduleAppointmentPage> {
   DateTime selectedDate = DateTime(2025, 12, 1);
   DateTime displayedMonth = DateTime(2025, 12);
   String selectedTime = '10.00 AM';
+  DateTime? currentDate;
+  String? currentTime;
   String? _createdAppointmentId; // Store the ID of the newly created appointment
 
   @override
   void initState() {
     super.initState();
-    if (widget.appointmentId != null) {
-      _loadAppointmentData();
-    }
+    _loadAppointmentData();
   }
 
   Future<void> _loadAppointmentData() async {
@@ -33,11 +33,13 @@ class _BookAppointmentPageState extends State<BookAppointmentPage> {
       final response = await supabase
           .from('appointments')
           .select('appointment_date')
-          .eq('appointment_id', widget.appointmentId!)
+          .eq('appointment_id', widget.appointmentId)
           .single();
 
       final appointmentDate = DateTime.parse(response['appointment_date'] as String);
       setState(() {
+        currentDate = appointmentDate;
+        currentTime = _formatTime(appointmentDate);
         selectedDate = appointmentDate;
         displayedMonth = DateTime(appointmentDate.year, appointmentDate.month);
         selectedTime = _formatTime(appointmentDate);
@@ -52,23 +54,6 @@ class _BookAppointmentPageState extends State<BookAppointmentPage> {
   Future<void> _saveAppointment() async {
     try {
       final supabase = Supabase.instance.client;
-      final user = supabase.auth.currentUser;
-      if (user == null) {
-        // Handle not logged in
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Please log in to book an appointment')),
-        );
-        return;
-      }
-
-      // Fetch clinic_id from doctors table using doctor_id
-      final doctorResponse = await supabase
-          .from('doctors')
-          .select('clinic_id')
-          .eq('doctor_id', widget.doctor.id)
-          .single();
-
-      final clinicId = doctorResponse['clinic_id'] as String;
 
       // Combine date and time
       final timeParts = selectedTime.split(' ');
@@ -88,29 +73,16 @@ class _BookAppointmentPageState extends State<BookAppointmentPage> {
         minute,
       );
 
-      if (widget.appointmentId != null) {
-        // Update existing appointment
-        await supabase.from('appointments').update({
-          'appointment_date': appointmentDateTime.toIso8601String(),
-        }).eq('appointment_id', widget.appointmentId!);
-      } else {
-        // Insert new appointment
-        final response = await supabase.from('appointments').insert({
-          'user_id': user.id,
-          'doctor_id': widget.doctor.id,
-          'clinic_id': clinicId,
-          'appointment_date': appointmentDateTime.toIso8601String(),
-          'status': 'active',
-        }).select('appointment_id').single();
-
-        _createdAppointmentId = response['appointment_id'] as String;
-      }
+      // Update existing appointment
+      await supabase.from('appointments').update({
+        'appointment_date': appointmentDateTime.toIso8601String(),
+      }).eq('appointment_id', widget.appointmentId);
     } catch (e) {
       // Handle errors
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to ${widget.appointmentId != null ? 'update' : 'book'} appointment: $e')),
+        SnackBar(content: Text('Failed to reschedule appointment: $e')),
       );
-      // Don't show success dialog if save failed
+      // Don't navigate if save failed
       return;
     }
   }
@@ -119,7 +91,7 @@ class _BookAppointmentPageState extends State<BookAppointmentPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Book Appointment'),
+        title: const Text('Reschedule Appointment'),
         backgroundColor: Colors.white,
         foregroundColor: Colors.black,
         elevation: 0,
@@ -240,10 +212,23 @@ class _BookAppointmentPageState extends State<BookAppointmentPage> {
           ],
         ),
         child: ElevatedButton(
-          onPressed: () async {
-            await _saveAppointment();
-            _showSuccessDialog(context);
-          },
+            onPressed: () async {
+              await _saveAppointment();
+              // Navigate to reschedule2.dart
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => RescheduleAppointmentScreen(
+                    currentDate: currentDate!,
+                    currentTime: currentTime!,
+                    newDate: selectedDate,
+                    newTime: selectedTime,
+                    doctorName: widget.doctor.name,
+                    doctor: widget.doctor,
+                  ),
+                ),
+              );
+            },
           style: ElevatedButton.styleFrom(
             backgroundColor: const Color(0xFF1E2A3B),
             padding: const EdgeInsets.symmetric(vertical: 16),
@@ -257,111 +242,6 @@ class _BookAppointmentPageState extends State<BookAppointmentPage> {
           ),
         ),
       ),
-    );
-  }
-
-  // SUCCESS DIALOG
-  void _showSuccessDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (BuildContext context) {
-        return Dialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20),
-          ),
-          child: Padding(
-            padding: const EdgeInsets.all(32),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Container(
-                  width: 100,
-                  height: 100,
-                  decoration: BoxDecoration(
-                    color: Colors.teal[100],
-                    shape: BoxShape.circle,
-                  ),
-                  child: Container(
-                    margin: const EdgeInsets.all(20),
-                    decoration: const BoxDecoration(
-                      color: Colors.teal,
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Icon(
-                      Icons.check,
-                      color: Colors.white,
-                      size: 40,
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 24),
-                const Text(
-                  'Congratulations!',
-                  style: TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                Text(
-                  "Your appointment is confirmed for ${_formatDate(selectedDate)}, at $selectedTime.",
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    color: Colors.grey[600],
-                    fontSize: 14,
-                    height: 1.5,
-                  ),
-                ),
-                const SizedBox(height: 24),
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: () {
-                      Navigator.of(context).pop(); // Close dialog
-                      Navigator.of(context).pop(); // Back to previous page
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF1E2A3B),
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                    child: const Text(
-                      'Done',
-                      style: TextStyle(fontSize: 16, color: Colors.white),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 12),
-                TextButton(
-                  onPressed: () {
-                    Navigator.of(context).pop(); // Close dialog
-                    if (_createdAppointmentId != null) {
-                      Navigator.of(context).pushReplacement(
-                        MaterialPageRoute(
-                          builder: (context) => RescheduleAppointmentPage(
-                            doctor: widget.doctor,
-                            appointmentId: _createdAppointmentId!,
-                          ),
-                        ),
-                      );
-                    }
-                  },
-                  child: const Text(
-                    'Edit your appointment',
-                    style: TextStyle(
-                      color: Color(0xFF1E2A3B),
-                      fontSize: 14,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        );
-      },
     );
   }
 
@@ -480,7 +360,7 @@ class _BookAppointmentPageState extends State<BookAppointmentPage> {
     );
   }
 
-  
+
   // TIME SLOT WIDGET
   Widget _buildTimeSlot(String time) {
     final isSelected = time == selectedTime;

@@ -49,71 +49,85 @@ class _BookAppointmentPageState extends State<BookAppointmentPage> {
     }
   }
 
-  Future<void> _saveAppointment() async {
-    try {
-      final supabase = Supabase.instance.client;
-      final user = supabase.auth.currentUser;
-      if (user == null) {
-        // Handle not logged in
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Please log in to book an appointment')),
-        );
-        return;
-      }
+Future<bool> _saveAppointment() async {
+  try {
+    final supabase = Supabase.instance.client;
+    final user = supabase.auth.currentUser;
 
-      // Fetch clinic_id from doctors table using doctor_id
-      final doctorResponse = await supabase
-          .from('doctors')
-          .select('clinic_id')
-          .eq('doctor_id', widget.doctor.id)
+    if (user == null) {
+      // Handle not logged in
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please log in to book an appointment')),
+      );
+      return false;
+    }
+
+    // Fetch clinic_id from doctors table using doctor_id
+    final doctorResponse = await supabase
+        .from('doctors')
+        .select('clinic_id')
+        .eq('doctor_id', widget.doctor.id)
+        .single();
+
+    final clinicId = doctorResponse['clinic_id'] as String;
+
+    // Combine date and time
+    final timeParts = selectedTime.split(' ');
+    final hourMinute = timeParts[0].split('.');
+    int hour = int.parse(hourMinute[0]);
+    int minute = int.parse(hourMinute[1]);
+
+    if (timeParts[1] == 'PM' && hour != 12) {
+      hour += 12;
+    } else if (timeParts[1] == 'AM' && hour == 12) {
+      hour = 0;
+    }
+
+    final appointmentDateTime = DateTime(
+      selectedDate.year,
+      selectedDate.month,
+      selectedDate.day,
+      hour,
+      minute,
+    );
+
+    if (widget.appointmentId != null) {
+      // Update existing appointment
+      await supabase
+          .from('appointments')
+          .update({
+            'appointment_date': appointmentDateTime.toIso8601String(),
+          })
+          .eq('appointment_id', widget.appointmentId!);
+    } else {
+      // Insert new appointment (INI PENTING: pakai user.id)
+      final response = await supabase
+          .from('appointments')
+          .insert({
+            'user_id': user.id,                    // <- id user yang login
+            'doctor_id': widget.doctor.id,
+            'clinic_id': clinicId,
+            'appointment_date': appointmentDateTime.toIso8601String(),
+            'status': 'active',
+          })
+          .select('appointment_id')
           .single();
 
-      final clinicId = doctorResponse['clinic_id'] as String;
-
-      // Combine date and time
-      final timeParts = selectedTime.split(' ');
-      final hourMinute = timeParts[0].split('.');
-      int hour = int.parse(hourMinute[0]);
-      int minute = int.parse(hourMinute[1]);
-      if (timeParts[1] == 'PM' && hour != 12) {
-        hour += 12;
-      } else if (timeParts[1] == 'AM' && hour == 12) {
-        hour = 0;
-      }
-      final appointmentDateTime = DateTime(
-        selectedDate.year,
-        selectedDate.month,
-        selectedDate.day,
-        hour,
-        minute,
-      );
-
-      if (widget.appointmentId != null) {
-        // Update existing appointment
-        await supabase.from('appointments').update({
-          'appointment_date': appointmentDateTime.toIso8601String(),
-        }).eq('appointment_id', widget.appointmentId!);
-      } else {
-        // Insert new appointment
-        final response = await supabase.from('appointments').insert({
-          'user_id': user.id,
-          'doctor_id': widget.doctor.id,
-          'clinic_id': clinicId,
-          'appointment_date': appointmentDateTime.toIso8601String(),
-          'status': 'active',
-        }).select('appointment_id').single();
-
-        _createdAppointmentId = response['appointment_id'] as String;
-      }
-    } catch (e) {
-      // Handle errors
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to ${widget.appointmentId != null ? 'update' : 'book'} appointment: $e')),
-      );
-      // Don't show success dialog if save failed
-      return;
+      _createdAppointmentId = response['appointment_id'] as String;
     }
+
+    return true; // sukses
+  } catch (e) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          'Failed to ${widget.appointmentId != null ? 'update' : 'book'} appointment: $e',
+        ),
+      ),
+    );
+    return false; // gagal
   }
+}
 
   @override
   Widget build(BuildContext context) {

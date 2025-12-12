@@ -3,6 +3,7 @@ import 'notification.dart';
 import 'location_screen.dart'; // <-- IMPORT FILE BARU
 import 'all_doctors_screen.dart';
 import 'palnews/palnews_page.dart';
+import 'book_history.dart'; // TAMBAHKAN IMPORT
 
 /// =================== HOME SCREEN ===================
 
@@ -133,18 +134,22 @@ class _HomeScreenState extends State<HomeScreen> {
           setState(() => _currentIndex = index);
 
           if (index == 1) {
-            // TAB LOCATION → BUKA LOCATION SCREEN
+            // TAB LOCATION
             Navigator.of(context).push(
               MaterialPageRoute(builder: (_) => const LocationScreen()),
             );
           } else if (index == 2) {
-            // TAB TENGAH → PALNEWS
+            // TAB PALNEWS
             Navigator.of(context).push(
               MaterialPageRoute(builder: (_) => const PalNewsPage()),
             );
+          } else if (index == 3) {
+            // TAB CALENDAR → NAVIGATE KE BOOK_CANCEL
+            Navigator.of(context).push(
+              MaterialPageRoute(builder: (_) => const MyBookingsScreen()),
+            );
           }
-          // index 0 = Home (stay di sini)
-          // index 3 = Calendar (nanti)
+          // index 0 = Home (stay)
           // index 4 = Profile (nanti)
         },
         items: [

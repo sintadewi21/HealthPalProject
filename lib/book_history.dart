@@ -1,30 +1,22 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'all_doctors_screen.dart'; // Sesuaikan path-nya
+import 'all_doctors_screen.dart'; 
+import 'add_review_dialog.dart';  
+import 'docdetails.dart';         
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-
-  await Supabase.initialize(
-    url: 'https://twvktwrplxoduzawsyin.supabase.co',
-    anonKey:
-        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR3dmt0d3JwbHhvZHV6YXdzeWluIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQwNzYxOTIsImV4cCI6MjA3OTY1MjE5Mn0.Rqb2PxiaKOZCd8cy1-DqrMlZz2nXn9m7BP-aZEV9rFg',
-  );
-
+  // ... Inisialisasi Supabase (Biarkan sesuai code aslimu) ...
   runApp(const MyApp());
 }
 
 class MyApp extends StatelessWidget {
   const MyApp({Key? key}) : super(key: key);
-
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'My Bookings',
-      theme: ThemeData(
-        primarySwatch: Colors.blue,
-        useMaterial3: true,
-      ),
+      theme: ThemeData(primarySwatch: Colors.blue, useMaterial3: true),
       home: const MyBookingsScreen(),
     );
   }
@@ -32,15 +24,13 @@ class MyApp extends StatelessWidget {
 
 class MyBookingsScreen extends StatefulWidget {
   const MyBookingsScreen({Key? key}) : super(key: key);
-
   @override
   State<MyBookingsScreen> createState() => _MyBookingsScreenState();
 }
 
-class _MyBookingsScreenState extends State<MyBookingsScreen>
-    with SingleTickerProviderStateMixin {
+class _MyBookingsScreenState extends State<MyBookingsScreen> with SingleTickerProviderStateMixin {
   late TabController _tabController;
-  int _reloadKey = 0; // untuk force reload CanceledView
+  int _reloadKey = 0;
 
   @override
   void initState() {
@@ -49,90 +39,84 @@ class _MyBookingsScreenState extends State<MyBookingsScreen>
   }
 
   @override
-  void dispose() {
-    _tabController.dispose();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: const Color(0xFFF8F9FE),
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
         centerTitle: true,
-        title: const Text(
-          'My Bookings',
-          style: TextStyle(
-            color: Colors.black,
-            fontSize: 18,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
+        title: const Text('My Bookings', style: TextStyle(color: Colors.black, fontSize: 18, fontWeight: FontWeight.w600)),
       ),
       body: Column(
         children: [
-          TabBar(
-            controller: _tabController,
-            tabs: const [
-              Tab(text: 'Upcoming'),
-              Tab(text: 'Completed'),
-              Tab(text: 'Canceled'),
-            ],
-            labelColor: Colors.black,
-            unselectedLabelColor: Colors.grey,
-            indicatorColor: Colors.black,
+          Container(
+            color: Colors.white,
+            child: TabBar(
+              controller: _tabController,
+              tabs: const [Tab(text: 'Upcoming'), Tab(text: 'Completed'), Tab(text: 'Canceled')],
+              labelColor: const Color(0xFF1E2A3B),
+              unselectedLabelColor: Colors.grey,
+              indicatorColor: const Color(0xFF1E2A3B),
+            ),
           ),
           Expanded(
             child: TabBarView(
               controller: _tabController,
               children: [
-                UpcomingView(
-                  onStatusChanged: () {
-                    // kalau ada appointment di-cancel, naikkan reloadKey
-                    setState(() {
-                      _reloadKey++;
-                    });
-                  },
-                ),
+                UpcomingView(onStatusChanged: () => setState(() => _reloadKey++)),
                 const CompletedView(),
-                CanceledView(
-                  key: ValueKey(_reloadKey),
-                  onStatusChanged: () {
-                    setState(() {});
-                  },
-                ),
+                CanceledView(key: ValueKey(_reloadKey), onStatusChanged: () => setState(() {})),
               ],
             ),
           ),
         ],
       ),
+      // Tombol tambah booking
       floatingActionButton: FloatingActionButton(
         onPressed: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => const AllDoctorsScreen(),
-            ),
-          ).then((_) {
+          Navigator.push(context, MaterialPageRoute(builder: (context) => const AllDoctorsScreen())).then((_) {
             _tabController.animateTo(0);
             setState(() {});
           });
         },
-        child: const Icon(Icons.add),
+        backgroundColor: const Color(0xFF1E2A3B),
+        child: const Icon(Icons.add, color: Colors.white),
       ),
     );
   }
 }
 
-// ======================= UPCOMING =======================
+// ======================= HELPERS NAVIGASI =======================
+
+void _navigateToDetail(BuildContext context, AppointmentData item) {
+  // Disini kita mengirim data ASLI yang sudah diambil dari database
+  final doctorObj = Doctor(
+    id: item.doctorId, 
+    name: item.doctorName,
+    specialization: item.specialization,
+    profileImageUrl: item.doctorImage,
+    clinicName: item.clinic,
+    location: "Unknown Location", 
+    rating: 0.0, // Nanti dihitung otomatis di halaman DocDetails
+    reviews: 0,  // Nanti dihitung otomatis di halaman DocDetails
+    
+    // --> INI YANG BIKIN EXPERIENCE JADI REAL (Bukan "0" lagi) <--
+    // Kita ambil dari item.doctorExperience yang sudah kita fetch dari DB
+    experience: item.doctorExperience, 
+  );
+
+  Navigator.push(
+    context,
+    MaterialPageRoute(builder: (context) => DocDetails(doctor: doctorObj)),
+  );
+}
+
+// ======================= UPCOMING VIEW =======================
 
 class UpcomingView extends StatefulWidget {
   final VoidCallback onStatusChanged;
-
-  const UpcomingView({Key? key, required this.onStatusChanged})
-      : super(key: key);
-
+  const UpcomingView({Key? key, required this.onStatusChanged}) : super(key: key);
   @override
   State<UpcomingView> createState() => _UpcomingViewState();
 }
@@ -147,58 +131,42 @@ class _UpcomingViewState extends State<UpcomingView> {
   }
 
   Future<List<AppointmentData>> fetchUpcomingAppointments() async {
-    final supabase = Supabase.instance.client;
-    final user = supabase.auth.currentUser;
-
-    if (user == null) {
-      debugPrint('No user session');
-      return [];
-    }
-
-    final now = DateTime.now().toUtc();
-
-    final response = await supabase
-        .from('appointments')
-        .select('appointment_id, appointment_date, doctor_id, clinic_id')
-        .eq('user_id', user.id)
-        .eq('status', 'active')
-        .gte('appointment_date', now.toIso8601String())
-        .order('appointment_date', ascending: true);
-
-    final List data = response as List;
-
-    final appointments = <AppointmentData>[];
-
-    for (final row in data) {
-      final doctorId = row['doctor_id'] as String;
-      final clinicId = row['clinic_id'] as String;
-
-      final doctor = await supabase
-          .from('doctors')
-          .select('name, specialization, profile_picture')
-          .eq('doctor_id', doctorId)
-          .maybeSingle();
-
-      final clinic = await supabase
-          .from('clinics')
-          .select('clinic_name')
-          .eq('clinic_id', clinicId)
-          .maybeSingle();
-
-      if (doctor == null || clinic == null) continue;
-
-      appointments.add(
-        AppointmentData(
-          appointmentId: row['appointment_id'] as String,
-          doctorName: doctor['name'] as String? ?? 'Unknown Doctor',
-          specialization: doctor['specialization'] as String? ?? 'Unknown',
-          clinic: clinic['clinic_name'] as String? ?? 'Unknown Clinic',
-          doctorImage: doctor['profile_picture'] as String? ?? '',
-          appointmentDate: DateTime.parse(row['appointment_date'] as String),
-        ),
-      );
-    }
-    return appointments;
+     final supabase = Supabase.instance.client;
+     final user = supabase.auth.currentUser;
+     if (user == null) return [];
+     
+     final now = DateTime.now().toUtc();
+     final response = await supabase.from('appointments').select('appointment_id, appointment_date, doctor_id, clinic_id')
+        .eq('user_id', user.id).eq('status', 'active').gte('appointment_date', now.toIso8601String()).order('appointment_date', ascending: true);
+     
+     final appointments = <AppointmentData>[];
+     for (final row in response as List) {
+        final doctorId = row['doctor_id'];
+        
+        // --- UPDATE PENTING: AMBIL KOLOM 'experience' DARI DATABASE ---
+        final doctor = await supabase
+            .from('doctors')
+            .select('name, specialization, profile_picture, experience') // <--- Tambah experience disini
+            .eq('doctor_id', doctorId)
+            .maybeSingle();
+            
+        final clinic = await supabase.from('clinics').select('clinic_name').eq('clinic_id', row['clinic_id']).maybeSingle();
+        
+        if (doctor != null && clinic != null) {
+           appointments.add(AppointmentData(
+             appointmentId: row['appointment_id'],
+             doctorId: doctorId,
+             doctorName: doctor['name'],
+             specialization: doctor['specialization'],
+             clinic: clinic['clinic_name'],
+             doctorImage: doctor['profile_picture'] ?? '',
+             // Simpan experience yang didapat dari DB ke variable lokal
+             doctorExperience: doctor['experience'] ?? '0 years', 
+             appointmentDate: DateTime.parse(row['appointment_date']),
+           ));
+        }
+     }
+     return appointments;
   }
 
   void _refreshAppointments() {
@@ -214,36 +182,19 @@ class _UpcomingViewState extends State<UpcomingView> {
       child: FutureBuilder<List<AppointmentData>>(
         future: futureAppointments,
         builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          }
-
-          if (snapshot.hasError) {
-            return Center(
-              child: Text('Error: ${snapshot.error}'),
-            );
-          }
-
-          if (!snapshot.hasData || snapshot.data!.isEmpty) {
-            return const Center(
-              child: Text('No upcoming appointments'),
-            );
-          }
-
-          final appointments = snapshot.data!;
+          if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
+          if (snapshot.data!.isEmpty) return const Center(child: Text('No upcoming appointments'));
 
           return ListView.builder(
             padding: const EdgeInsets.all(16),
-            itemCount: appointments.length,
+            itemCount: snapshot.data!.length,
             itemBuilder: (context, index) {
+              final item = snapshot.data![index];
               return AppointmentCard(
-                appointment: appointments[index],
-                onCancel: () => _showCancelDialog(context, appointments[index]),
-                onReschedule: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Reschedule appointment')),
-                  );
-                },
+                appointment: item,
+                onCardTap: () => _navigateToDetail(context, item),
+                onCancel: () => _showCancelDialog(context, item),
+                onReschedule: () {},
               );
             },
           );
@@ -256,43 +207,22 @@ class _UpcomingViewState extends State<UpcomingView> {
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (BuildContext dialogContext) {
-        return AppointmentCancellationDialog(
-          onConfirm: () async {
-            await cancelAppointment(appointment.appointmentId);
-
-            if (!mounted) return;
-
-            Navigator.of(dialogContext).pop(); // tutup dialog
-            _refreshAppointments(); // refresh upcoming
-            widget.onStatusChanged(); // trigger parent (untuk CanceledView reload)
-
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Appointment cancelled successfully'),
-                backgroundColor: Colors.red,
-              ),
-            );
-          },
-        );
-      },
+      builder: (ctx) => AppointmentCancellationDialog(onConfirm: () async {
+        await Supabase.instance.client.from('appointments').update({'status': 'canceled'}).eq('appointment_id', appointment.appointmentId);
+        if (!mounted) return;
+        Navigator.pop(ctx);
+        _refreshAppointments();
+        widget.onStatusChanged();
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Appointment cancelled'), backgroundColor: Colors.red));
+      }),
     );
-  }
-
-  Future<void> cancelAppointment(String appointmentId) async {
-    final supabase = Supabase.instance.client;
-    await supabase
-        .from('appointments')
-        .update({'status': 'canceled'})
-        .eq('appointment_id', appointmentId);
   }
 }
 
-// ======================= COMPLETED =======================
+// ======================= COMPLETED VIEW =======================
 
 class CompletedView extends StatefulWidget {
   const CompletedView({Key? key}) : super(key: key);
-
   @override
   State<CompletedView> createState() => _CompletedViewState();
 }
@@ -307,58 +237,42 @@ class _CompletedViewState extends State<CompletedView> {
   }
 
   Future<List<AppointmentData>> fetchCompletedAppointments() async {
-    final supabase = Supabase.instance.client;
-    final user = supabase.auth.currentUser;
-
-    if (user == null) {
-      debugPrint('No user session');
-      return [];
-    }
-
-    final now = DateTime.now().toUtc();
-
-    final response = await supabase
-        .from('appointments')
-        .select('appointment_id, appointment_date, doctor_id, clinic_id')
-        .eq('user_id', user.id)
-        .eq('status', 'active') // hanya yang tidak dibatalkan
-        .lt('appointment_date', now.toIso8601String()) // sudah lewat
-        .order('appointment_date', ascending: false);
-
-    final List data = response as List;
-    final appointments = <AppointmentData>[];
-
-    for (final row in data) {
-      final doctorId = row['doctor_id'] as String;
-      final clinicId = row['clinic_id'] as String;
-
-      final doctor = await supabase
-          .from('doctors')
-          .select('name, specialization, profile_picture')
-          .eq('doctor_id', doctorId)
-          .maybeSingle();
-
-      final clinic = await supabase
-          .from('clinics')
-          .select('clinic_name')
-          .eq('clinic_id', clinicId)
-          .maybeSingle();
-
-      if (doctor == null || clinic == null) continue;
-
-      appointments.add(
-        AppointmentData(
-          appointmentId: row['appointment_id'] as String,
-          doctorName: doctor['name'] as String? ?? 'Unknown Doctor',
-          specialization: doctor['specialization'] as String? ?? 'Unknown',
-          clinic: clinic['clinic_name'] as String? ?? 'Unknown Clinic',
-          doctorImage: doctor['profile_picture'] as String? ?? '',
-          appointmentDate: DateTime.parse(row['appointment_date'] as String),
-        ),
-      );
-    }
-
-    return appointments;
+     final supabase = Supabase.instance.client;
+     final user = supabase.auth.currentUser;
+     if (user == null) return [];
+     
+     final now = DateTime.now().toUtc();
+     final response = await supabase.from('appointments').select('appointment_id, appointment_date, doctor_id, clinic_id')
+        .eq('user_id', user.id).eq('status', 'active').lt('appointment_date', now.toIso8601String()).order('appointment_date', ascending: false);
+     
+     final appointments = <AppointmentData>[];
+     for (final row in response as List) {
+        final doctorId = row['doctor_id'];
+        
+        // --- UPDATE PENTING: AMBIL KOLOM 'experience' DARI DATABASE ---
+        final doctor = await supabase
+            .from('doctors')
+            .select('name, specialization, profile_picture, experience') // <--- Tambah experience disini
+            .eq('doctor_id', doctorId)
+            .maybeSingle();
+            
+        final clinic = await supabase.from('clinics').select('clinic_name').eq('clinic_id', row['clinic_id']).maybeSingle();
+        
+        if (doctor != null && clinic != null) {
+           appointments.add(AppointmentData(
+             appointmentId: row['appointment_id'],
+             doctorId: doctorId,
+             doctorName: doctor['name'],
+             specialization: doctor['specialization'],
+             clinic: clinic['clinic_name'],
+             doctorImage: doctor['profile_picture'] ?? '',
+             // Simpan experience
+             doctorExperience: doctor['experience'] ?? '0 years',
+             appointmentDate: DateTime.parse(row['appointment_date']),
+           ));
+        }
+     }
+     return appointments;
   }
 
   void _refreshAppointments() {
@@ -374,30 +288,33 @@ class _CompletedViewState extends State<CompletedView> {
       child: FutureBuilder<List<AppointmentData>>(
         future: futureCompletedAppointments,
         builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          }
-
-          if (snapshot.hasError) {
-            return Center(
-              child: Text('Error: ${snapshot.error}'),
-            );
-          }
-
-          if (!snapshot.hasData || snapshot.data!.isEmpty) {
-            return const Center(
-              child: Text('No completed appointments'),
-            );
-          }
-
-          final appointments = snapshot.data!;
+          if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
+          if (snapshot.data!.isEmpty) return const Center(child: Text('No completed appointments'));
 
           return ListView.builder(
             padding: const EdgeInsets.all(16),
-            itemCount: appointments.length,
+            itemCount: snapshot.data!.length,
             itemBuilder: (context, index) {
+              final item = snapshot.data![index];
               return CompletedAppointmentCard(
-                appointment: appointments[index],
+                appointment: item,
+                onCardTap: () => _navigateToDetail(context, item),
+                onReBook: () {
+                   Navigator.push(context, MaterialPageRoute(builder: (_) => const AllDoctorsScreen()));
+                },
+                onAddReview: () {
+                  showDialog(
+                    context: context,
+                    builder: (_) => AddReviewDialog(
+                      appointmentId: item.appointmentId,
+                      doctorId: item.doctorId,
+                      doctorName: item.doctorName,
+                      doctorSpecialization: item.specialization,
+                      doctorImage: item.doctorImage,
+                      onSuccess: _refreshAppointments,
+                    ),
+                  );
+                },
               );
             },
           );
@@ -407,130 +324,79 @@ class _CompletedViewState extends State<CompletedView> {
   }
 }
 
-// ======================= CANCELED =======================
+// ======================= CANCELED VIEW =======================
 
 class CanceledView extends StatefulWidget {
   final VoidCallback onStatusChanged;
-
-  const CanceledView({Key? key, required this.onStatusChanged})
-      : super(key: key);
-
+  const CanceledView({Key? key, required this.onStatusChanged}) : super(key: key);
   @override
   State<CanceledView> createState() => _CanceledViewState();
 }
 
 class _CanceledViewState extends State<CanceledView> {
   late Future<List<AppointmentData>> futureCanceledAppointments;
-
   @override
-  void initState() {
-    super.initState();
-    futureCanceledAppointments = fetchCanceledAppointments();
-  }
-
+  void initState() { super.initState(); futureCanceledAppointments = fetchCanceledAppointments(); }
+  
   Future<List<AppointmentData>> fetchCanceledAppointments() async {
-    try {
-      final supabase = Supabase.instance.client;
-      final session = supabase.auth.currentSession;
-      if (session == null) {
-        print('DEBUG: No user session found');
-        return [];
+    final supabase = Supabase.instance.client;
+    final user = supabase.auth.currentUser;
+    if (user == null) return [];
+
+    final response = await supabase.from('appointments').select('appointment_id, appointment_date, doctor_id, clinic_id')
+        .eq('user_id', user.id).eq('status', 'canceled').order('appointment_date', ascending: false);
+
+    final appointments = <AppointmentData>[];
+    for (final row in response as List) {
+      final doctorId = row['doctor_id'];
+      
+      // --- UPDATE PENTING: AMBIL KOLOM 'experience' DARI DATABASE ---
+      final doctor = await supabase
+          .from('doctors')
+          .select('name, specialization, profile_picture, experience') // <--- Tambah experience disini
+          .eq('doctor_id', doctorId)
+          .maybeSingle();
+          
+      final clinic = await supabase.from('clinics').select('clinic_name').eq('clinic_id', row['clinic_id']).maybeSingle();
+
+      if (doctor != null && clinic != null) {
+        appointments.add(AppointmentData(
+          appointmentId: row['appointment_id'],
+          doctorId: doctorId,
+          doctorName: doctor['name'],
+          specialization: doctor['specialization'],
+          clinic: clinic['clinic_name'],
+          doctorImage: doctor['profile_picture'] ?? '',
+          // Simpan experience
+          doctorExperience: doctor['experience'] ?? '0 years',
+          appointmentDate: DateTime.parse(row['appointment_date']),
+        ));
       }
-
-      final userId = session.user.id;
-
-      final appointmentsResponse = await supabase
-          .from('appointments')
-          .select('appointment_id, appointment_date, doctor_id, clinic_id')
-          .eq('user_id', userId)
-          .eq('status', 'canceled')
-          .order('appointment_date', ascending: false);
-
-      if (appointmentsResponse.isEmpty) {
-        return [];
-      }
-
-      List<AppointmentData> appointments = [];
-
-      for (var appointmentData in appointmentsResponse) {
-        try {
-          final doctorId = appointmentData['doctor_id'];
-          final clinicId = appointmentData['clinic_id'];
-
-          final doctorResponse = await supabase
-              .from('doctors')
-              .select('name, specialization, profile_picture')
-              .eq('doctor_id', doctorId)
-              .maybeSingle();
-
-          final clinicResponse = await supabase
-              .from('clinics')
-              .select('clinic_name')
-              .eq('clinic_id', clinicId)
-              .maybeSingle();
-
-          if (doctorResponse != null && clinicResponse != null) {
-            final appointment = AppointmentData(
-              appointmentId: appointmentData['appointment_id'] ?? '',
-              doctorName: doctorResponse['name'] ?? 'Unknown Doctor',
-              specialization: doctorResponse['specialization'] ?? 'Unknown',
-              clinic: clinicResponse['clinic_name'] ?? 'Unknown Clinic',
-              doctorImage: doctorResponse['profile_picture'] ?? '',
-              appointmentDate:
-                  DateTime.parse(appointmentData['appointment_date']),
-            );
-            appointments.add(appointment);
-          }
-        } catch (e) {
-          print('Error processing appointment: $e');
-          continue;
-        }
-      }
-
-      return appointments;
-    } catch (e) {
-      print('Error fetching canceled appointments: $e');
-      rethrow;
     }
-  }
-
-  void _refreshAppointments() {
-    setState(() {
-      futureCanceledAppointments = fetchCanceledAppointments();
-    });
+    return appointments;
   }
 
   @override
   Widget build(BuildContext context) {
     return RefreshIndicator(
-      onRefresh: () async => _refreshAppointments(),
+      onRefresh: () async {
+        setState(() {
+          futureCanceledAppointments = fetchCanceledAppointments();
+        });
+      },
       child: FutureBuilder<List<AppointmentData>>(
         future: futureCanceledAppointments,
         builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          }
-
-          if (snapshot.hasError) {
-            return Center(
-              child: Text('Error: ${snapshot.error}'),
-            );
-          }
-
-          if (!snapshot.hasData || snapshot.data!.isEmpty) {
-            return const Center(
-              child: Text('No canceled appointments'),
-            );
-          }
-
-          final appointments = snapshot.data!;
+          if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
+          if (snapshot.data!.isEmpty) return const Center(child: Text('No canceled appointments'));
 
           return ListView.builder(
             padding: const EdgeInsets.all(16),
-            itemCount: appointments.length,
+            itemCount: snapshot.data!.length,
             itemBuilder: (context, index) {
               return CanceledAppointmentCard(
-                appointment: appointments[index],
+                appointment: snapshot.data![index],
+                onCardTap: () => _navigateToDetail(context, snapshot.data![index]),
               );
             },
           );
@@ -540,588 +406,164 @@ class _CanceledViewState extends State<CanceledView> {
   }
 }
 
-// ======================= CARDS & DIALOG =======================
+// ======================= WIDGET CARDS =======================
 
 class AppointmentCard extends StatelessWidget {
   final AppointmentData appointment;
   final VoidCallback onCancel;
   final VoidCallback onReschedule;
+  final VoidCallback onCardTap;
 
-  const AppointmentCard({
-    Key? key,
-    required this.appointment,
-    required this.onCancel,
-    required this.onReschedule,
-  }) : super(key: key);
+  const AppointmentCard({Key? key, required this.appointment, required this.onCancel, required this.onReschedule, required this.onCardTap}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 16),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(24),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            appointment.formattedDate,
-            style: const TextStyle(
-              fontSize: 12,
-              color: Colors.grey,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              ClipRRect(
-                borderRadius: BorderRadius.circular(12),
-                child: appointment.doctorImage.isNotEmpty
-                    ? Image.network(
-                        appointment.doctorImage,
-                        width: 64,
-                        height: 64,
-                        fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) {
-                          return _buildPlaceholder();
-                        },
-                      )
-                    : _buildPlaceholder(),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      appointment.doctorName,
-                      style: const TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      appointment.specialization,
-                      style: const TextStyle(
-                        fontSize: 12,
-                        color: Colors.grey,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Row(
-                      children: [
-                        const Icon(Icons.location_on,
-                            size: 12, color: Colors.grey),
-                        const SizedBox(width: 4),
-                        Expanded(
-                          child: Text(
-                            appointment.clinic,
-                            style: const TextStyle(
-                              fontSize: 11,
-                              color: Colors.grey,
-                            ),
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          Row(
-            children: [
-              Expanded(
-                child: Container(
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(24),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.08),
-                        blurRadius: 6,
-                        offset: const Offset(0, 2),
-                      ),
-                    ],
-                  ),
-                  child: OutlinedButton(
-                    onPressed: onCancel,
-                    style: OutlinedButton.styleFrom(
-                      side: const BorderSide(color: Colors.grey),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(24),
-                      ),
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                    ),
-                    child: const Text(
-                      'Cancel',
-                      style: TextStyle(color: Colors.black),
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Container(
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(24),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.08),
-                        blurRadius: 6,
-                        offset: const Offset(0, 2),
-                      ),
-                    ],
-                  ),
-                  child: ElevatedButton(
-                    onPressed: onReschedule,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.black,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(24),
-                      ),
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                      elevation: 0,
-                    ),
-                    child: const Text('Reschedule'),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ],
+    return GestureDetector(
+      onTap: onCardTap,
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 16),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(24), boxShadow: [BoxShadow(color: Colors.grey.withOpacity(0.1), blurRadius: 8, offset: const Offset(0, 2))]),
+        child: Column(
+          children: [
+            _buildHeader(appointment),
+            const SizedBox(height: 16),
+            Row(children: [
+               Expanded(child: _buildButton('Cancel', Colors.black, Colors.white, onCancel, isOutlined: true)),
+               const SizedBox(width: 12),
+               Expanded(child: _buildButton('Reschedule', Colors.white, Colors.black, onReschedule, isOutlined: false)),
+            ])
+          ],
+        ),
       ),
     );
   }
+  
+  Widget _buildHeader(AppointmentData apt) {
+    return Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      ClipRRect(borderRadius: BorderRadius.circular(12), child: Image.network(apt.doctorImage, width: 64, height: 64, fit: BoxFit.cover, errorBuilder: (_,__,___)=>Container(color:Colors.grey[200], width:64, height:64))),
+      const SizedBox(width: 12),
+      Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Text(apt.formattedDate, style: const TextStyle(fontSize: 12, color: Colors.grey, fontWeight: FontWeight.w500)),
+        const SizedBox(height: 4),
+        Text(apt.doctorName, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
+        Text(apt.specialization, style: const TextStyle(fontSize: 12, color: Colors.grey)),
+        Text(apt.clinic, style: const TextStyle(fontSize: 11, color: Colors.grey)),
+      ])),
+    ]);
+  }
 
-  Widget _buildPlaceholder() {
-    return Container(
-      width: 64,
-      height: 64,
-      decoration: BoxDecoration(
-        color: Colors.grey[300],
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: const Icon(Icons.person, color: Colors.white),
-    );
+  Widget _buildButton(String text, Color textColor, Color bgColor, VoidCallback onTap, {bool isOutlined = false}) {
+    return isOutlined 
+      ? OutlinedButton(onPressed: onTap, style: OutlinedButton.styleFrom(side: const BorderSide(color: Colors.grey), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24))), child: Text(text, style: TextStyle(color: textColor)))
+      : ElevatedButton(onPressed: onTap, style: ElevatedButton.styleFrom(backgroundColor: bgColor, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24))), child: Text(text, style: TextStyle(color: textColor)));
   }
 }
 
 class CompletedAppointmentCard extends StatelessWidget {
   final AppointmentData appointment;
+  final VoidCallback onReBook;
+  final VoidCallback onAddReview;
+  final VoidCallback onCardTap;
 
-  const CompletedAppointmentCard({
-    Key? key,
-    required this.appointment,
-  }) : super(key: key);
+  const CompletedAppointmentCard({Key? key, required this.appointment, required this.onReBook, required this.onAddReview, required this.onCardTap}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 16),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(24),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
+    return GestureDetector(
+      onTap: onCardTap,
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 16),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(24), boxShadow: [BoxShadow(color: Colors.grey.withOpacity(0.1), blurRadius: 8, offset: const Offset(0, 2))]),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Completed at ${appointment.formattedDate}', style: const TextStyle(color: Colors.green, fontWeight: FontWeight.bold, fontSize: 12)),
+            const SizedBox(height: 12),
+            Row(children: [
+               ClipRRect(borderRadius: BorderRadius.circular(12), child: Image.network(appointment.doctorImage, width: 64, height: 64, fit: BoxFit.cover, errorBuilder: (_,__,___)=>Container(color:Colors.grey[200], width:64, height:64))),
+               const SizedBox(width: 12),
+               Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                 Text(appointment.doctorName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                 Text(appointment.specialization, style: const TextStyle(fontSize: 12, color: Colors.grey)),
+                 Text(appointment.clinic, style: const TextStyle(fontSize: 11, color: Colors.grey)),
+               ])),
+            ]),
+            const SizedBox(height: 16),
+            Row(children: [
+               Expanded(child: ElevatedButton(onPressed: onReBook, style: ElevatedButton.styleFrom(backgroundColor: Colors.grey[200], foregroundColor: Colors.black, elevation: 0), child: const Text("Re-Book"))),
+               const SizedBox(width: 12),
+               Expanded(child: ElevatedButton(onPressed: onAddReview, style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF1E2A3B), foregroundColor: Colors.white, elevation: 0), child: const Text("Add Review"))),
+            ])
+          ],
+        ),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Completed at ${appointment.formattedDate}',
-            style: const TextStyle(
-              fontSize: 12,
-              color: Colors.green,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              ClipRRect(
-                borderRadius: BorderRadius.circular(12),
-                child: appointment.doctorImage.isNotEmpty
-                    ? Image.network(
-                        appointment.doctorImage,
-                        width: 64,
-                        height: 64,
-                        fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) {
-                          return _buildPlaceholder();
-                        },
-                      )
-                    : _buildPlaceholder(),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      appointment.doctorName,
-                      style: const TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      appointment.specialization,
-                      style: const TextStyle(
-                        fontSize: 12,
-                        color: Colors.grey,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Row(
-                      children: [
-                        const Icon(Icons.location_on,
-                            size: 12, color: Colors.grey),
-                        const SizedBox(width: 4),
-                        Expanded(
-                          child: Text(
-                            appointment.clinic,
-                            style: const TextStyle(
-                              fontSize: 11,
-                              color: Colors.grey,
-                            ),
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildPlaceholder() {
-    return Container(
-      width: 64,
-      height: 64,
-      decoration: BoxDecoration(
-        color: Colors.grey[300],
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: const Icon(Icons.person, color: Colors.white),
     );
   }
 }
 
 class CanceledAppointmentCard extends StatelessWidget {
   final AppointmentData appointment;
+  final VoidCallback onCardTap;
 
-  const CanceledAppointmentCard({
-    Key? key,
-    required this.appointment,
-  }) : super(key: key);
+  const CanceledAppointmentCard({Key? key, required this.appointment, required this.onCardTap}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 16),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(24),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Canceled at ${appointment.formattedDate}',
-            style: const TextStyle(
-              fontSize: 12,
-              color: Colors.red,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              ClipRRect(
-                borderRadius: BorderRadius.circular(12),
-                child: appointment.doctorImage.isNotEmpty
-                    ? Image.network(
-                        appointment.doctorImage,
-                        width: 64,
-                        height: 64,
-                        fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) {
-                          return _buildPlaceholder();
-                        },
-                      )
-                    : _buildPlaceholder(),
-              ),
+    return GestureDetector(
+      onTap: onCardTap,
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 16),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(24), boxShadow: [BoxShadow(color: Colors.grey.withOpacity(0.1), blurRadius: 8, offset: const Offset(0, 2))]),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Canceled at ${appointment.formattedDate}', style: const TextStyle(fontSize: 12, color: Colors.red, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 12),
+            Row(children: [
+              ClipRRect(borderRadius: BorderRadius.circular(12), child: Image.network(appointment.doctorImage, width: 64, height: 64, fit: BoxFit.cover, errorBuilder: (_,__,___) => Container(color: Colors.grey[200], width: 64, height: 64))),
               const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      appointment.doctorName,
-                      style: const TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      appointment.specialization,
-                      style: const TextStyle(
-                        fontSize: 12,
-                        color: Colors.grey,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Row(
-                      children: [
-                        const Icon(Icons.location_on,
-                            size: 12, color: Colors.grey),
-                        const SizedBox(width: 4),
-                        Expanded(
-                          child: Text(
-                            appointment.clinic,
-                            style: const TextStyle(
-                              fontSize: 11,
-                              color: Colors.grey,
-                            ),
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          SizedBox(
-            width: double.infinity,
-            child: Container(
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(24),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.08),
-                    blurRadius: 6,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
-              ),
-              child: OutlinedButton(
-                onPressed: () {
-                  // Re-book: buka lagi AllDoctorsScreen,
-                  // dari sana user pilih dokter dan lanjut ke BookAppointmentPage
-                  Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (_) => const AllDoctorsScreen(),
-                    ),
-                  );
-                },
-                style: OutlinedButton.styleFrom(
-                  side: const BorderSide(color: Colors.grey),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(24),
-                  ),
-                  padding: const EdgeInsets.symmetric(vertical: 12),
-                ),
-                child: const Text(
-                  'Re-Book',
-                  style: TextStyle(color: Colors.black),
-                ),
-              ),
-            ),
-          ),
-        ],
+              Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Text(appointment.doctorName, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
+                Text(appointment.specialization, style: const TextStyle(fontSize: 12, color: Colors.grey)),
+                Text(appointment.clinic, style: const TextStyle(fontSize: 11, color: Colors.grey)),
+              ])),
+            ]),
+            const SizedBox(height: 16),
+            SizedBox(width: double.infinity, child: OutlinedButton(onPressed: () {}, style: OutlinedButton.styleFrom(side: const BorderSide(color: Colors.grey), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24))), child: const Text('Canceled', style: TextStyle(color: Colors.black)))),
+          ],
+        ),
       ),
-    );
-  }
-
-  Widget _buildPlaceholder() {
-    return Container(
-      width: 64,
-      height: 64,
-      decoration: BoxDecoration(
-        color: Colors.grey[300],
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: const Icon(Icons.person, color: Colors.white),
     );
   }
 }
 
 class AppointmentCancellationDialog extends StatelessWidget {
   final VoidCallback onConfirm;
-
-  const AppointmentCancellationDialog({Key? key, required this.onConfirm})
-      : super(key: key);
+  const AppointmentCancellationDialog({Key? key, required this.onConfirm}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     return Dialog(
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-      ),
-      insetPadding: const EdgeInsets.all(16),
-      child: Container(
-        padding: const EdgeInsets.all(24),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.1),
-              blurRadius: 12,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: Padding(
+        padding: const EdgeInsets.all(20),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Container(
-              width: 80,
-              height: 80,
-              decoration: BoxDecoration(
-                color: Colors.teal.withOpacity(0.2),
-                shape: BoxShape.circle,
-              ),
-              child: Center(
-                child: Image.asset(
-                  'assets/images/close_icon.png',
-                  width: 40,
-                  height: 40,
-                  errorBuilder: (context, error, stackTrace) {
-                    return Icon(
-                      Icons.close,
-                      size: 40,
-                      color: Colors.teal[400],
-                    );
-                  },
-                ),
-              ),
-            ),
+            const Icon(Icons.warning, size: 50, color: Colors.orange),
+            const SizedBox(height: 10),
+            const Text("Are you sure?", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 10),
+            const Text("Do you really want to cancel this appointment?", textAlign: TextAlign.center),
             const SizedBox(height: 20),
-            const Text(
-              'Appointment Cancellation',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            const SizedBox(height: 16),
-            const Text(
-              'You are attempting to cancel your appointment. Are you sure you want to proceed with the cancellation?',
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 14,
-                color: Colors.grey,
-                height: 1.5,
-              ),
-            ),
-            const SizedBox(height: 24),
-            Row(
-              children: [
-                Expanded(
-                  child: Container(
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(24),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.08),
-                          blurRadius: 6,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
-                    ),
-                    child: ElevatedButton(
-                      onPressed: onConfirm,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.red,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(24),
-                        ),
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                        elevation: 0,
-                      ),
-                      child: const Text(
-                        'Go Back',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Container(
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(24),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.08),
-                          blurRadius: 6,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
-                    ),
-                    child: OutlinedButton(
-                      onPressed: () => Navigator.of(context).pop(),
-                      style: OutlinedButton.styleFrom(
-                        side: const BorderSide(color: Colors.grey),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(24),
-                        ),
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                      ),
-                      child: const Text(
-                        'Cancel',
-                        style: TextStyle(
-                          color: Colors.black,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
+            Row(children: [
+              Expanded(child: OutlinedButton(onPressed: () => Navigator.pop(context), child: const Text("No"))),
+              const SizedBox(width: 10),
+              Expanded(child: ElevatedButton(onPressed: onConfirm, style: ElevatedButton.styleFrom(backgroundColor: Colors.red), child: const Text("Yes, Cancel", style: TextStyle(color: Colors.white)))),
+            ])
           ],
         ),
       ),
@@ -1129,49 +571,34 @@ class AppointmentCancellationDialog extends StatelessWidget {
   }
 }
 
-// ======================= MODEL =======================
+// ======================= MODEL TERBARU =======================
+// Pastikan ini ada di bagian paling bawah file book_history.dart
 
 class AppointmentData {
   final String appointmentId;
+  final String doctorId;
   final String doctorName;
   final String specialization;
   final String clinic;
   final String doctorImage;
+  final String doctorExperience; // <--- Field Baru untuk menyimpan experience dari DB
   final DateTime appointmentDate;
 
   AppointmentData({
     required this.appointmentId,
+    required this.doctorId,
     required this.doctorName,
     required this.specialization,
     required this.clinic,
     required this.doctorImage,
+    required this.doctorExperience, // <--- Field Baru
     required this.appointmentDate,
   });
 
   String get formattedDate {
-    final day = appointmentDate.day;
-    final month = _getMonthName(appointmentDate.month);
-    final year = appointmentDate.year;
+    final months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
     final hour = appointmentDate.hour.toString().padLeft(2, '0');
     final minute = appointmentDate.minute.toString().padLeft(2, '0');
-    return '$month $day, $year - $hour:$minute';
-  }
-
-  String _getMonthName(int month) {
-    const months = [
-      'January',
-      'February',
-      'March',
-      'April',
-      'May',
-      'June',
-      'July',
-      'August',
-      'September',
-      'October',
-      'November',
-      'December'
-    ];
-    return months[month - 1];
+    return '${months[appointmentDate.month - 1]} ${appointmentDate.day}, ${appointmentDate.year} - $hour:$minute';
   }
 }

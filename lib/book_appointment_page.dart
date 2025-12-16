@@ -1,3 +1,4 @@
+//book_appointment_page.dart
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'all_doctors_screen.dart'; // Import the Doctor model
@@ -355,7 +356,7 @@ Future<bool> _saveAppointment() async {
                     if (_createdAppointmentId != null) {
                       Navigator.of(context).pushReplacement(
                         MaterialPageRoute(
-                          builder: (context) => RescheduleAppointmentPage(
+                          builder: (context) => BookAppointmentPage(
                             doctor: widget.doctor,
                             appointmentId: _createdAppointmentId!,
                           ),

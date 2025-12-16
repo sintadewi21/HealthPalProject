@@ -1,9 +1,11 @@
+//homepage.dart
 import 'package:flutter/material.dart';
 import 'notification.dart';
 import 'location_screen.dart'; // <-- IMPORT FILE BARU
 import 'all_doctors_screen.dart';
 import 'palnews/palnews_page.dart';
 import 'book_history.dart'; // TAMBAHKAN IMPORT
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 /// =================== HOME SCREEN ===================
 
@@ -17,6 +19,8 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   final PageController _bannerController = PageController();
   final TextEditingController _searchController = TextEditingController();
+  final SupabaseClient supabase = Supabase.instance.client;
+  String? get uid => supabase.auth.currentUser?.id;
 
   int _currentBanner = 0;
   int _currentIndex = 0;
@@ -48,6 +52,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final userId = uid;
     // WARNA KATEGORI
     final categoryColors = <Color>[
       const Color(0xFFFFE3E3),
@@ -216,41 +221,53 @@ class _HomeScreenState extends State<HomeScreen> {
                     children: [
                       InkWell(
                         borderRadius: BorderRadius.circular(50),
-                        onTap: () {
-                          Navigator.of(context).push(
-                            MaterialPageRoute(
-                              builder: (_) => NotificationPage(),
-                            ),
+                        onTap: () async {
+                          await Navigator.of(context).push(
+                            MaterialPageRoute(builder: (_) => const NotificationPage()),
                           );
+                          setState(() {}); // refresh badge pas balik
                         },
                         child: Container(
-                          padding: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(
+                          padding: const EdgeInsets.all(10),
+                          decoration: const BoxDecoration(
                             color: Colors.white,
                             shape: BoxShape.circle,
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withOpacity(0.05),
-                                blurRadius: 8,
-                                offset: const Offset(0, 3),
+                          ),
+                          child: const Icon(
+                            Icons.notifications_none_rounded,
+                            color: Colors.black,
+                          ),
+                        ),
+                      ),
+
+                      if (userId != null)
+                        StreamBuilder<List<Map<String, dynamic>>>(
+                          stream: supabase
+                              .from('notifications')
+                              .stream(primaryKey: ['notification_id']),
+                          builder: (context, snapshot) {
+                            final data = snapshot.data ?? const <Map<String, dynamic>>[];
+
+                            final hasUnread = data.any((n) =>
+                                n['user_id'] == userId &&
+                                (n['status'] ?? 'unread') == 'unread');
+
+                            if (!hasUnread) return const SizedBox.shrink();
+
+                            return Positioned(
+                              right: 6,
+                              top: 6,
+                              child: Container(
+                                width: 8,
+                                height: 8,
+                                decoration: const BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  color: Colors.red,
+                                ),
                               ),
-                            ],
-                          ),
-                          child: const Icon(Icons.notifications_none_rounded),
+                            );
+                          },
                         ),
-                      ),
-                      Positioned(
-                        right: 6,
-                        top: 6,
-                        child: Container(
-                          width: 8,
-                          height: 8,
-                          decoration: const BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: Colors.red,
-                          ),
-                        ),
-                      ),
                     ],
                   ),
                 ],

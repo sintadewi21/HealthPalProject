@@ -1,8 +1,10 @@
+//book_history.dart
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'all_doctors_screen.dart'; 
 import 'add_review_dialog.dart';  
-import 'docdetails.dart';         
+import 'docdetails.dart';
+import 'reschedule1.dart';
+import 'all_doctors_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -194,7 +196,22 @@ class _UpcomingViewState extends State<UpcomingView> {
                 appointment: item,
                 onCardTap: () => _navigateToDetail(context, item),
                 onCancel: () => _showCancelDialog(context, item),
-                onReschedule: () {},
+                onReschedule: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => Reschedule1Page(
+                        appointmentId: item.appointmentId,
+                        appointmentDate: item.appointmentDate,
+                        doctorName: item.doctorName,
+                      ),
+                    ),
+                  ).then((ok) {
+                    if (ok == true) {
+                    _refreshAppointments();
+                    }
+                  });
+                },
               );
             },
           );
@@ -208,7 +225,10 @@ class _UpcomingViewState extends State<UpcomingView> {
       context: context,
       barrierDismissible: false,
       builder: (ctx) => AppointmentCancellationDialog(onConfirm: () async {
-        await Supabase.instance.client.from('appointments').update({'status': 'canceled'}).eq('appointment_id', appointment.appointmentId);
+        await Supabase.instance.client
+        .from('appointments')
+        .update({'status': 'cancelled'})
+        .eq('appointment_id', appointment.appointmentId);
         if (!mounted) return;
         Navigator.pop(ctx);
         _refreshAppointments();
@@ -300,7 +320,7 @@ class _CompletedViewState extends State<CompletedView> {
                 appointment: item,
                 onCardTap: () => _navigateToDetail(context, item),
                 onReBook: () {
-                   Navigator.push(context, MaterialPageRoute(builder: (_) => const AllDoctorsScreen()));
+                   Navigator.push(context, MaterialPageRoute(builder: (_) =>AllDoctorsScreen()));
                 },
                 onAddReview: () {
                   showDialog(
@@ -344,7 +364,7 @@ class _CanceledViewState extends State<CanceledView> {
     if (user == null) return [];
 
     final response = await supabase.from('appointments').select('appointment_id, appointment_date, doctor_id, clinic_id')
-        .eq('user_id', user.id).eq('status', 'canceled').order('appointment_date', ascending: false);
+        .eq('user_id', user.id).eq('status', 'cancelled').order('appointment_date', ascending: false);
 
     final appointments = <AppointmentData>[];
     for (final row in response as List) {

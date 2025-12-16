@@ -1,36 +1,103 @@
+//reschedule2.dart
 import 'package:flutter/material.dart';
-import 'all_doctors_screen.dart'; // Import the Doctor model
-import 'docdetails.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class RescheduleAppointmentScreen extends StatefulWidget {
+  final String appointmentId;
+  final DateTime newDateTime;
   final DateTime currentDate;
   final String currentTime;
   final DateTime newDate;
   final String newTime;
   final String doctorName;
-  final Doctor doctor;
 
   const RescheduleAppointmentScreen({
-    Key? key,
+    super.key,
+    required this.appointmentId,
+    required this.newDateTime,
     required this.currentDate,
     required this.currentTime,
     required this.newDate,
     required this.newTime,
     required this.doctorName,
-    required this.doctor,
-  }) : super(key: key);
+  });
 
   @override
-  State<RescheduleAppointmentScreen> createState() => _RescheduleAppointmentScreenState();
+  State<RescheduleAppointmentScreen> createState() =>
+      _RescheduleAppointmentScreenState();
 }
 
-class _RescheduleAppointmentScreenState extends State<RescheduleAppointmentScreen> {
+class _RescheduleAppointmentScreenState
+    extends State<RescheduleAppointmentScreen> {
+  final supabase = Supabase.instance.client;
+  bool _loading = false;
+
   String _formatDate(DateTime date) {
     const months = [
-      'January', 'February', 'March', 'April', 'May', 'June',
-      'July', 'August', 'September', 'October', 'November', 'December'
+      'January',
+      'February',
+      'March',
+      'April',
+      'May',
+      'June',
+      'July',
+      'August',
+      'September',
+      'October',
+      'November',
+      'December'
     ];
+
     return '${months[date.month - 1]} ${date.day}, ${date.year}';
+  }
+
+  Future<void> _confirmReschedule() async {
+    if (_loading) return;
+
+    setState(() => _loading = true);
+
+    try {
+      await supabase
+          .from('appointments')
+          .update({
+            'appointment_date':
+                widget.newDateTime.toUtc().toIso8601String()
+          })
+          .eq('appointment_id', widget.appointmentId);
+
+      if (!mounted) return;
+
+      // ✅ popup sukses di halaman ini (bukan halaman baru)
+      await showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (_) => AlertDialog(
+          title: const Text('Appointment Updated!'),
+          content: Text(
+            'Your appointment with ${widget.doctorName} has been updated.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context), // tutup dialog
+              child: const Text('Done'),
+            ),
+          ],
+        ),
+      );
+
+      // ✅ ini yang bikin balik & ngasih "signal sukses"
+      Navigator.pop(context, true);
+    } catch (e) {
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to reschedule: $e'),
+        ),
+      );
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
   }
 
   @override
@@ -40,16 +107,13 @@ class _RescheduleAppointmentScreenState extends State<RescheduleAppointmentScree
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black),
-          onPressed: () {},
-        ),
+        leading: const BackButton(color: Colors.black),
+        centerTitle: true,
         title: const Text(
           'Reschedule Appointment',
           style: TextStyle(
-            color: Color(0xFF5C6B7C),
-            fontSize: 16,
-            fontWeight: FontWeight.w500,
+            color: Colors.black,
+            fontWeight: FontWeight.w600,
           ),
         ),
       ),
@@ -63,7 +127,6 @@ class _RescheduleAppointmentScreenState extends State<RescheduleAppointmentScree
               style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
-                color: Colors.black87,
               ),
             ),
             const SizedBox(height: 16),
@@ -99,7 +162,6 @@ class _RescheduleAppointmentScreenState extends State<RescheduleAppointmentScree
               style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
-                color: Colors.black87,
               ),
             ),
             const SizedBox(height: 16),
@@ -132,34 +194,23 @@ class _RescheduleAppointmentScreenState extends State<RescheduleAppointmentScree
             const Spacer(),
             SizedBox(
               width: double.infinity,
-              height: 56,
+              height: 52, // <- sama seperti reschedule1
               child: ElevatedButton(
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => SuccessScreen(
-                        newDate: widget.newDate,
-                        newTime: widget.newTime,
-                        doctorName: widget.doctorName,
-                        doctor: widget.doctor,
-                      ),
-                    ),
-                  );
-                },
+                onPressed: _loading ? null : _confirmReschedule,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF1C2833),
+                  disabledBackgroundColor:
+                      const Color(0xFF1C2833).withOpacity(0.5),
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(28),
-                  ),
+                    borderRadius: BorderRadius.circular(26),
+                  ), // <- sama seperti reschedule1
                   elevation: 0,
                 ),
-                child: const Text(
-                  'Confirm',
-                  style: TextStyle(
+                child: Text(
+                  _loading ? 'Saving...' : 'Confirm',
+                  style: const TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
-                    color: Colors.white,
                   ),
                 ),
               ),
@@ -176,21 +227,30 @@ class SuccessScreen extends StatelessWidget {
   final DateTime newDate;
   final String newTime;
   final String doctorName;
-  final Doctor doctor;
 
   const SuccessScreen({
-    Key? key,
+    super.key,
     required this.newDate,
     required this.newTime,
     required this.doctorName,
-    required this.doctor,
-  }) : super(key: key);
+  });
 
   String _formatDate(DateTime date) {
     const months = [
-      'January', 'February', 'March', 'April', 'May', 'June',
-      'July', 'August', 'September', 'October', 'November', 'December'
+      'January',
+      'February',
+      'March',
+      'April',
+      'May',
+      'June',
+      'July',
+      'August',
+      'September',
+      'October',
+      'November',
+      'December'
     ];
+
     return '${months[date.month - 1]} ${date.day}, ${date.year}';
   }
 
@@ -203,9 +263,7 @@ class SuccessScreen extends StatelessWidget {
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.black),
-          onPressed: () {
-            Navigator.pop(context);
-          },
+          onPressed: () => Navigator.pop(context),
         ),
         title: const Text(
           'Reschedule Appointment',
@@ -230,8 +288,8 @@ class SuccessScreen extends StatelessWidget {
               Container(
                 width: 100,
                 height: 100,
-                decoration: BoxDecoration(
-                  color: const Color(0xFF9ED4C5),
+                decoration: const BoxDecoration(
+                  color: Color(0xFF9ED4C5),
                   shape: BoxShape.circle,
                 ),
                 child: const Icon(
@@ -251,7 +309,8 @@ class SuccessScreen extends StatelessWidget {
               ),
               const SizedBox(height: 12),
               Text(
-                'Your appointment with $doctorName has been updated to ${_formatDate(newDate)}, at $newTime.',
+                'Your appointment with $doctorName has been updated to '
+                '${_formatDate(newDate)}, at $newTime.',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 14,
@@ -265,12 +324,7 @@ class SuccessScreen extends StatelessWidget {
                 height: 50,
                 child: ElevatedButton(
                   onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => DocDetails(doctor: doctor),
-                      ),
-                    );
+                    Navigator.pop(context); // tutup dialog
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF1C2833),

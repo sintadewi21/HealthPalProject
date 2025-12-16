@@ -1,416 +1,245 @@
+//reschedule1.dart
 import 'package:flutter/material.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
-import 'all_doctors_screen.dart'; // Import the Doctor model
-import 'package:HealthPal/reschedule2.dart';
+import 'reschedule2.dart';
 
-class RescheduleAppointmentPage extends StatefulWidget {
-  final Doctor doctor;
+class Reschedule1Page extends StatefulWidget {
   final String appointmentId;
+  final DateTime appointmentDate; // jadwal lama
+  final String doctorName;
 
-  const RescheduleAppointmentPage({Key? key, required this.doctor, required this.appointmentId}) : super(key: key);
+  const Reschedule1Page({
+    super.key,
+    required this.appointmentId,
+    required this.appointmentDate,
+    required this.doctorName,
+  });
 
   @override
-  State<RescheduleAppointmentPage> createState() => _RescheduleAppointmentPageState();
+  State<Reschedule1Page> createState() => _Reschedule1PageState();
 }
 
-class _RescheduleAppointmentPageState extends State<RescheduleAppointmentPage> {
-  DateTime selectedDate = DateTime(2025, 12, 1);
-  DateTime displayedMonth = DateTime(2025, 12);
-  String selectedTime = '10.00 AM';
-  DateTime? currentDate;
-  String? currentTime;
-  String? _createdAppointmentId; // Store the ID of the newly created appointment
+class _Reschedule1PageState extends State<Reschedule1Page> {
+  DateTime? selectedDate;
+  String? selectedTime;
+
+  final List<String> timeSlots = const [
+    '09.00 AM',
+    '09.30 AM',
+    '10.00 AM',
+    '10.30 AM',
+    '11.00 AM',
+    '11.30 AM',
+    '03.00 PM',
+    '03.30 PM',
+    '04.00 PM',
+    '04.30 PM',
+    '05.00 PM',
+    '05.30 PM',
+  ];
 
   @override
   void initState() {
     super.initState();
-    _loadAppointmentData();
+    final old = widget.appointmentDate;
+    selectedDate = DateTime(old.year, old.month, old.day);
+    selectedTime = _formatTime(old);
   }
 
-  Future<void> _loadAppointmentData() async {
-    try {
-      final supabase = Supabase.instance.client;
-      final response = await supabase
-          .from('appointments')
-          .select('appointment_date')
-          .eq('appointment_id', widget.appointmentId)
-          .single();
+  String _formatTime(DateTime dt) {
+    int hour = dt.hour;
+    final minute = dt.minute;
+    final isPm = hour >= 12;
+    final suffix = isPm ? 'PM' : 'AM';
 
-      final appointmentDate = DateTime.parse(response['appointment_date'] as String);
-      setState(() {
-        currentDate = appointmentDate;
-        currentTime = _formatTime(appointmentDate);
-        selectedDate = appointmentDate;
-        displayedMonth = DateTime(appointmentDate.year, appointmentDate.month);
-        selectedTime = _formatTime(appointmentDate);
-      });
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to load appointment data: $e')),
-      );
+    hour = hour % 12;
+    if (hour == 0) hour = 12;
+
+    return '${hour.toString()}.${minute.toString().padLeft(2, '0')} $suffix';
+  }
+
+  DateTime _combineDateAndTime(DateTime date, String timeLabel) {
+    final parts = timeLabel.split(' ');
+    final hm = parts[0];
+    final ampm = parts[1];
+    final hmParts = hm.split('.');
+
+    int hour = int.parse(hmParts[0]);
+    final minute = int.parse(hmParts[1]);
+
+    if (ampm == 'PM' && hour != 12) hour += 12;
+    if (ampm == 'AM' && hour == 12) hour = 0;
+
+    return DateTime(date.year, date.month, date.day, hour, minute);
+  }
+
+  Future<void> _pickDate() async {
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: selectedDate ?? DateTime.now(),
+      firstDate: DateTime.now(),
+      lastDate: DateTime.now().add(const Duration(days: 365)),
+    );
+
+    if (picked != null) {
+      setState(() => selectedDate = picked);
     }
   }
 
-  Future<void> _saveAppointment() async {
-    try {
-      final supabase = Supabase.instance.client;
+  Future<void> _confirm() async {
+    if (selectedDate == null || selectedTime == null) return;
 
-      // Combine date and time
-      final timeParts = selectedTime.split(' ');
-      final hourMinute = timeParts[0].split('.');
-      int hour = int.parse(hourMinute[0]);
-      int minute = int.parse(hourMinute[1]);
-      if (timeParts[1] == 'PM' && hour != 12) {
-        hour += 12;
-      } else if (timeParts[1] == 'AM' && hour == 12) {
-        hour = 0;
-      }
-      final appointmentDateTime = DateTime(
-        selectedDate.year,
-        selectedDate.month,
-        selectedDate.day,
-        hour,
-        minute,
-      );
+    final newDateTime =
+        _combineDateAndTime(selectedDate!, selectedTime!);
 
-      // Update existing appointment
-      await supabase.from('appointments').update({
-        'appointment_date': appointmentDateTime.toIso8601String(),
-      }).eq('appointment_id', widget.appointmentId);
-    } catch (e) {
-      // Handle errors
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to reschedule appointment: $e')),
-      );
-      // Don't navigate if save failed
-      return;
+    final ok = await Navigator.push<bool>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => RescheduleAppointmentScreen(
+          appointmentId: widget.appointmentId,
+          newDateTime: newDateTime,
+          currentDate: widget.appointmentDate,
+          currentTime: _formatTime(widget.appointmentDate),
+          newDate: selectedDate!,
+          newTime: selectedTime!,
+          doctorName: widget.doctorName,
+        ),
+      ),
+    );
+
+    if (ok == true && mounted) {
+      Navigator.pop(context, true); // ✅ balik ke BookHistory bawa signal
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final confirmEnabled =
+        selectedDate != null && selectedTime != null;
+
     return Scaffold(
+      backgroundColor: const Color(0xFFF7F0FA),
       appBar: AppBar(
-        title: const Text('Reschedule Appointment'),
         backgroundColor: Colors.white,
-        foregroundColor: Colors.black,
         elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () => Navigator.pop(context),
-        ),
-      ),
-      body: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                'Select Date',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(height: 16),
-
-              // Calendar
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Column(
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        IconButton(
-                          icon: const Icon(Icons.chevron_left),
-                          onPressed: () {
-                            setState(() {
-                              int newMonth = displayedMonth.month - 1;
-                              int newYear = displayedMonth.year;
-                              if (newMonth < 1) {
-                                newMonth = 12;
-                                newYear--;
-                              }
-                              displayedMonth = DateTime(newYear, newMonth, 1);
-                            });
-                          },
-                        ),
-                        Text(
-                          "${_monthName(displayedMonth.month)} ${displayedMonth.year}",
-                          style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        IconButton(
-                          icon: const Icon(Icons.chevron_right),
-                          onPressed: () {
-                            setState(() {
-                              int newMonth = displayedMonth.month + 1;
-                              int newYear = displayedMonth.year;
-                              if (newMonth > 12) {
-                                newMonth = 1;
-                                newYear++;
-                              }
-                              displayedMonth = DateTime(newYear, newMonth, 1);
-                            });
-                          },
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
-                    _buildCalendar(),
-                  ],
-                ),
-              ),
-
-              const SizedBox(height: 24),
-
-              const Text(
-                'Select Hour',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(height: 16),
-
-              // Time Slots
-              Wrap(
-                spacing: 12,
-                runSpacing: 12,
-                children: [
-                  '09.00 AM', '09.30 AM', '10.00 AM',
-                  '10.30 AM', '11.00 AM', '11.30 AM',
-                  '3.00 PM', '3.30 PM', '4.00 PM',
-                  '4.30 PM', '5.00 PM', '5.30 PM',
-                ].map((time) => _buildTimeSlot(time)).toList(),
-              ),
-
-              const SizedBox(height: 100),
-            ],
+        leading: const BackButton(color: Colors.black),
+        centerTitle: true,
+        title: const Text(
+          'Reschedule Appointment',
+          style: TextStyle(
+            color: Colors.black,
+            fontWeight: FontWeight.w600,
           ),
         ),
       ),
-      bottomNavigationBar: Container(
+      body: Padding(
         padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          boxShadow: [
-            BoxShadow(
-              color: Colors.grey.withOpacity(0.2),
-              spreadRadius: 1,
-              blurRadius: 10,
-              offset: const Offset(0, -3),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const SizedBox(height: 6),
+            const Text(
+              'Select Date',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            const SizedBox(height: 12),
+            SizedBox(
+              width: double.infinity,
+              height: 48,
+              child: OutlinedButton(
+                onPressed: _pickDate,
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: const Color(0xFF1C2833),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  side: BorderSide(color: Colors.grey.shade300),
+                ),
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    selectedDate == null
+                        ? 'Pick a date'
+                        : '${selectedDate!.day}/${selectedDate!.month}/${selectedDate!.year}',
+                    style: const TextStyle(fontWeight: FontWeight.w600),
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 24),
+            const Text(
+              'Select Hour',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            const SizedBox(height: 12),
+            Wrap(
+              spacing: 12,
+              runSpacing: 12,
+              children: timeSlots.map((t) {
+                final isSelected = selectedTime == t;
+
+                return SizedBox(
+                  width: 110,
+                  height: 44,
+                  child: OutlinedButton(
+                    onPressed: () =>
+                        setState(() => selectedTime = t),
+                    style: OutlinedButton.styleFrom(
+                      backgroundColor: isSelected
+                          ? const Color(0xFF1C2833)
+                          : Colors.white,
+                      foregroundColor:
+                          isSelected ? Colors.white : Colors.black,
+                      side: BorderSide(
+                        color: isSelected
+                            ? const Color(0xFF1C2833)
+                            : Colors.grey.shade300,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                    child: Text(
+                      t,
+                      style: const TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                );
+              }).toList(),
+            ),
+            const Spacer(),
+            SizedBox(
+              width: double.infinity,
+              height: 52,
+              child: ElevatedButton(
+                onPressed: confirmEnabled ? _confirm : null,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF1C2833),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(26),
+                  ),
+                  elevation: 0,
+                ),
+                child: const Text(
+                  'Confirm',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
             ),
           ],
         ),
-        child: ElevatedButton(
-            onPressed: () async {
-              await _saveAppointment();
-              // Navigate to reschedule2.dart
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => RescheduleAppointmentScreen(
-                    currentDate: currentDate!,
-                    currentTime: currentTime!,
-                    newDate: selectedDate,
-                    newTime: selectedTime,
-                    doctorName: widget.doctor.name,
-                    doctor: widget.doctor,
-                  ),
-                ),
-              );
-            },
-          style: ElevatedButton.styleFrom(
-            backgroundColor: const Color(0xFF1E2A3B),
-            padding: const EdgeInsets.symmetric(vertical: 16),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
-          ),
-          child: const Text(
-            'Confirm',
-            style: TextStyle(fontSize: 16, color: Colors.white),
-          ),
-        ),
       ),
     );
-  }
-
-  // CALENDAR BUILDER
-  Widget _buildCalendar() {
-    final daysOfWeek = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-
-    int year = displayedMonth.year;
-    int month = displayedMonth.month;
-
-    DateTime firstDay = DateTime(year, month, 1);
-    int daysInMonth = DateTime(year, month + 1, 0).day;
-
-    int startWeekday = firstDay.weekday == 7 ? 0 : firstDay.weekday;
-
-    DateTime today = DateTime.now();
-
-    // Calculate start of grid: Sunday of the week containing the first day
-    DateTime startOfGrid = firstDay.subtract(Duration(days: startWeekday));
-
-    // Calculate total cells: startWeekday + daysInMonth, then fill to end of week if needed
-    int totalCells = startWeekday + daysInMonth;
-    int remaining = totalCells % 7;
-    if (remaining > 0) {
-      totalCells += (7 - remaining);
-    }
-
-    return Column(
-      children: [
-        // Weekday labels
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-          children: daysOfWeek.map((d) => Expanded(
-            child: Container(
-              padding: const EdgeInsets.symmetric(vertical: 8),
-              decoration: const BoxDecoration(
-                border: Border(
-                  bottom: BorderSide(color: Colors.grey, width: 0.5),
-                ),
-              ),
-              child: Text(
-                d,
-                textAlign: TextAlign.center,
-                style: const TextStyle(
-                  fontSize: 12,
-                  color: Colors.grey,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ),
-          )).toList(),
-        ),
-        const SizedBox(height: 8),
-        // Calendar Grid
-        GridView.builder(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 7,
-            childAspectRatio: 1.0,
-          ),
-          itemCount: totalCells,
-          itemBuilder: (context, index) {
-            DateTime thisDate = startOfGrid.add(Duration(days: index));
-            bool isCurrentMonth = thisDate.year == year && thisDate.month == month;
-            bool isSelected = isCurrentMonth && selectedDate.year == year &&
-                selectedDate.month == month &&
-                selectedDate.day == thisDate.day;
-            bool isToday = isCurrentMonth && today.year == year &&
-                today.month == month &&
-                today.day == thisDate.day;
-
-            return GestureDetector(
-              onTap: isCurrentMonth ? () {
-                setState(() {
-                  selectedDate = thisDate;
-                });
-              } : null,
-              child: Container(
-                margin: const EdgeInsets.all(2),
-                decoration: BoxDecoration(
-                  color: isSelected
-                      ? const Color(0xFF1E2A3B)
-                      : isToday
-                          ? Colors.blue.shade100
-                          : Colors.transparent,
-                  border: Border.all(
-                    color: Colors.grey.shade300,
-                    width: 0.5,
-                  ),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Center(
-                  child: Text(
-                    "${thisDate.day}",
-                    style: TextStyle(
-                      fontSize: 14.0,
-                      color: isSelected
-                          ? Colors.white
-                          : isToday
-                              ? Colors.blue.shade800
-                              : isCurrentMonth
-                                  ? Colors.black
-                                  : Colors.grey.withOpacity(0.6),
-                      fontWeight: isSelected || isToday
-                          ? FontWeight.bold
-                          : FontWeight.normal,
-                    ),
-                  ),
-                ),
-              ),
-            );
-          },
-        ),
-      ],
-    );
-  }
-
-
-  // TIME SLOT WIDGET
-  Widget _buildTimeSlot(String time) {
-    final isSelected = time == selectedTime;
-    return GestureDetector(
-      onTap: () {
-        setState(() {
-          selectedTime = time;
-        });
-      },
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-        decoration: BoxDecoration(
-          color: isSelected ? const Color(0xFF1E2A3B) : Colors.white,
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(
-            color: isSelected ? const Color(0xFF1E2A3B) : Colors.grey[300]!,
-          ),
-        ),
-        child: Text(
-          time,
-          style: TextStyle(
-            color: isSelected ? Colors.white : Colors.black,
-            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-          ),
-        ),
-      ),
-    );
-  }
-
-  // HELPERS
-  String _monthName(int month) {
-    const names = [
-      "January", "February", "March", "April", "May", "June",
-      "July", "August", "September", "October", "November", "December"
-    ];
-    return names[month - 1];
-  }
-
-  String _formatDate(DateTime d) {
-    return "${_monthName(d.month)} ${d.day}, ${d.year}";
-  }
-
-  String _formatTime(DateTime d) {
-    int hour = d.hour;
-    String period = 'AM';
-    if (hour >= 12) {
-      period = 'PM';
-      if (hour > 12) hour -= 12;
-    }
-    if (hour == 0) hour = 12;
-    return "${hour.toString().padLeft(2, '0')}.${d.minute.toString().padLeft(2, '0')} $period";
   }
 }

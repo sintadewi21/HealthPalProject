@@ -5,6 +5,7 @@ import 'location_screen.dart'; // <-- IMPORT FILE BARU
 import 'all_doctors_screen.dart';
 import 'palnews/palnews_page.dart';
 import 'book_history.dart'; // TAMBAHKAN IMPORT
+import 'profile.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 /// =================== HOME SCREEN ===================
@@ -153,9 +154,12 @@ class _HomeScreenState extends State<HomeScreen> {
             Navigator.of(context).push(
               MaterialPageRoute(builder: (_) => const MyBookingsScreen()),
             );
+          } else if (index == 4) {
+            Navigator.of(context).push(
+              MaterialPageRoute(builder: (_) => const ProfilePage()),
+            );
           }
           // index 0 = Home (stay)
-          // index 4 = Profile (nanti)
         },
         items: [
           BottomNavigationBarItem(

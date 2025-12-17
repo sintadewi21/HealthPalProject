@@ -117,8 +117,8 @@ class _SignInScreenState extends State<SignInScreen> {
       ),
       child: TextField(
         controller: controller,
-        obscureText: isPassword,
-        keyboardType: keyboardType,
+        obscureText: false,
+        keyboardType: TextInputType.none,
         decoration: InputDecoration(
           hintText: hint,
           hintStyle: TextStyle(color: Colors.grey[500]),

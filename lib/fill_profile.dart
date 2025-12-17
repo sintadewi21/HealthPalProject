@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'homepage.dart'; // Import halaman tujuan akhir
 
+
 // Asumsi global instance 'supabase' sudah tersedia (dari main.dart)
 final supabase = Supabase.instance.client;
 

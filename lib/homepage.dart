@@ -22,7 +22,31 @@ class _HomeScreenState extends State<HomeScreen> {
   final TextEditingController _searchController = TextEditingController();
   final SupabaseClient supabase = Supabase.instance.client;
   String? get uid => supabase.auth.currentUser?.id;
+  String? nickname;
 
+  @override
+  void initState() {
+    super.initState();
+    _loadUserNickname();
+  }
+  // Fetch the nickname from Supabase
+  Future<void> _loadUserNickname() async {
+    final user = supabase.auth.currentUser;
+    if (user != null) {
+      final response = await supabase
+          .from('profiles') // <-- Adjust this to the correct table where nickname is stored
+          .select('nickname')
+          .eq('id', user.id)
+          .single();
+
+      if (response != null) {
+        setState(() {
+          nickname = response['nickname']; // <-- 3. Set the nickname value
+        });
+      }
+    }
+  }
+  
   int _currentBanner = 0;
   int _currentIndex = 0;
 
@@ -110,21 +134,6 @@ class _HomeScreenState extends State<HomeScreen> {
       },
     ];
 
-    final centers = [
-      {
-        'name': 'Sunrise Health Clinic',
-        'location': 'Meruya Selatan',
-        'image':
-            'https://images.pexels.com/photos/263402/pexels-photo-263402.jpeg',
-      },
-      {
-        'name': 'Golden Cardiology Center',
-        'location': 'Jakarta Barat',
-        'image':
-            'https://images.pexels.com/photos/236380/pexels-photo-236380.jpeg',
-      },
-    ];
-
     return Scaffold(
       backgroundColor: const Color(0xFFF7F8FA),
 
@@ -192,30 +201,27 @@ class _HomeScreenState extends State<HomeScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              /// TOP LOCATION & NOTIFICATION
+              /// TOP GREETING & NOTIFICATION
               Row(
                 children: [
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
-                    children: const [
+                    children: [
                       Text(
-                        'Location',
-                        style: TextStyle(fontSize: 12, color: Colors.grey),
+                        'Hello, ${nickname ?? 'User'}!',
+                        style: TextStyle(fontSize: 16, color: Colors.grey),
                       ),
                       SizedBox(height: 2),
                       Row(
                         children: [
-                          Icon(Icons.location_on_outlined, size: 18),
-                          SizedBox(width: 4),
                           Text(
-                            'Seattle, USA',
+                            'How are you feeling today?',
                             style: TextStyle(
-                              fontSize: 15,
+                              fontSize: 16,
                               fontWeight: FontWeight.w600,
                             ),
                           ),
                           SizedBox(width: 2),
-                          Icon(Icons.keyboard_arrow_down_rounded, size: 18),
                         ],
                       ),
                     ],
@@ -459,47 +465,6 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
 
               const SizedBox(height: 24),
-
-              /// NEARBY MEDICAL CENTERS TITLE
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: const [
-                  Text(
-                    'Nearby Medical Centers',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
-                  ),
-                  Text(
-                    'See All',
-                    style: TextStyle(
-                      fontSize: 13,
-                      color: Colors.blue,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
-
-              /// HORIZONTAL LIST OF CENTERS
-              SizedBox(
-                height: 190,
-                child: ListView.separated(
-                  scrollDirection: Axis.horizontal,
-                  itemCount: centers.length,
-                  separatorBuilder: (_, __) => const SizedBox(width: 16),
-                  itemBuilder: (context, index) {
-                    final c = centers[index];
-                    return SizedBox(
-                      width: 230,
-                      child: _MedicalCenterCard(
-                        name: c['name'] as String,
-                        location: c['location'] as String,
-                        imageUrl: c['image'] as String,
-                      ),
-                    );
-                  },
-                ),
-              ),
             ],
           ),
         ),

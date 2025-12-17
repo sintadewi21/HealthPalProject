@@ -1,16 +1,134 @@
+//book_appointment_page.dart
 import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import 'all_doctors_screen.dart'; // Import the Doctor model
+import 'reschedule1.dart'; // Import the RescheduleAppointmentPage
 
 class BookAppointmentPage extends StatefulWidget {
-  const BookAppointmentPage({Key? key}) : super(key: key);
+  final Doctor doctor;
+  final String? appointmentId; // Optional for editing existing appointment
+
+  const BookAppointmentPage({Key? key, required this.doctor, this.appointmentId}) : super(key: key);
 
   @override
   State<BookAppointmentPage> createState() => _BookAppointmentPageState();
 }
 
 class _BookAppointmentPageState extends State<BookAppointmentPage> {
-  DateTime selectedDate = DateTime(2023, 6, 15);
-  DateTime displayedMonth = DateTime(2023, 6);
+  DateTime selectedDate = DateTime(2025, 12, 1);
+  DateTime displayedMonth = DateTime(2025, 12);
   String selectedTime = '10.00 AM';
+  String? _createdAppointmentId; // Store the ID of the newly created appointment
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.appointmentId != null) {
+      _loadAppointmentData();
+    }
+  }
+
+  Future<void> _loadAppointmentData() async {
+    try {
+      final supabase = Supabase.instance.client;
+      final response = await supabase
+          .from('appointments')
+          .select('appointment_date')
+          .eq('appointment_id', widget.appointmentId!)
+          .single();
+
+      final appointmentDate = DateTime.parse(response['appointment_date'] as String);
+      setState(() {
+        selectedDate = appointmentDate;
+        displayedMonth = DateTime(appointmentDate.year, appointmentDate.month);
+        selectedTime = _formatTime(appointmentDate);
+      });
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to load appointment data: $e')),
+      );
+    }
+  }
+
+Future<bool> _saveAppointment() async {
+  try {
+    final supabase = Supabase.instance.client;
+    final user = supabase.auth.currentUser;
+
+    if (user == null) {
+      // Handle not logged in
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please log in to book an appointment')),
+      );
+      return false;
+    }
+
+    // Fetch clinic_id from doctors table using doctor_id
+    final doctorResponse = await supabase
+        .from('doctors')
+        .select('clinic_id')
+        .eq('doctor_id', widget.doctor.id)
+        .single();
+
+    final clinicId = doctorResponse['clinic_id'] as String;
+
+    // Combine date and time
+    final timeParts = selectedTime.split(' ');
+    final hourMinute = timeParts[0].split('.');
+    int hour = int.parse(hourMinute[0]);
+    int minute = int.parse(hourMinute[1]);
+
+    if (timeParts[1] == 'PM' && hour != 12) {
+      hour += 12;
+    } else if (timeParts[1] == 'AM' && hour == 12) {
+      hour = 0;
+    }
+
+    final appointmentDateTime = DateTime(
+      selectedDate.year,
+      selectedDate.month,
+      selectedDate.day,
+      hour,
+      minute,
+    );
+
+    if (widget.appointmentId != null) {
+      // Update existing appointment
+      await supabase
+          .from('appointments')
+          .update({
+            'appointment_date': appointmentDateTime.toIso8601String(),
+          })
+          .eq('appointment_id', widget.appointmentId!);
+    } else {
+      // Insert new appointment (INI PENTING: pakai user.id)
+      final response = await supabase
+          .from('appointments')
+          .insert({
+            'user_id': user.id,                    // <- id user yang login
+            'doctor_id': widget.doctor.id,
+            'clinic_id': clinicId,
+            'appointment_date': appointmentDateTime.toIso8601String(),
+            'status': 'active',
+          })
+          .select('appointment_id')
+          .single();
+
+      _createdAppointmentId = response['appointment_id'] as String;
+    }
+
+    return true; // sukses
+  } catch (e) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          'Failed to ${widget.appointmentId != null ? 'update' : 'book'} appointment: $e',
+        ),
+      ),
+    );
+    return false; // gagal
+  }
+}
 
   @override
   Widget build(BuildContext context) {
@@ -137,7 +255,8 @@ class _BookAppointmentPageState extends State<BookAppointmentPage> {
           ],
         ),
         child: ElevatedButton(
-          onPressed: () {
+          onPressed: () async {
+            await _saveAppointment();
             _showSuccessDialog(context);
           },
           style: ElevatedButton.styleFrom(
@@ -233,7 +352,17 @@ class _BookAppointmentPageState extends State<BookAppointmentPage> {
                 const SizedBox(height: 12),
                 TextButton(
                   onPressed: () {
-                    Navigator.of(context).pop(); // Just close the dialog
+                    Navigator.of(context).pop(); // Close dialog
+                    if (_createdAppointmentId != null) {
+                      Navigator.of(context).pushReplacement(
+                        MaterialPageRoute(
+                          builder: (context) => BookAppointmentPage(
+                            doctor: widget.doctor,
+                            appointmentId: _createdAppointmentId!,
+                          ),
+                        ),
+                      );
+                    }
                   },
                   child: const Text(
                     'Edit your appointment',
@@ -407,5 +536,16 @@ class _BookAppointmentPageState extends State<BookAppointmentPage> {
 
   String _formatDate(DateTime d) {
     return "${_monthName(d.month)} ${d.day}, ${d.year}";
+  }
+
+  String _formatTime(DateTime d) {
+    int hour = d.hour;
+    String period = 'AM';
+    if (hour >= 12) {
+      period = 'PM';
+      if (hour > 12) hour -= 12;
+    }
+    if (hour == 0) hour = 12;
+    return "${hour.toString().padLeft(2, '0')}.${d.minute.toString().padLeft(2, '0')} $period";
   }
 }

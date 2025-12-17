@@ -154,8 +154,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
     ),
     child: TextField(
       controller: controller,
-      obscureText: isPassword,
-      keyboardType: keyboardType,
+      obscureText: false,
+      keyboardType: TextInputType.none,
       decoration: InputDecoration(
         hintText: hint,
         hintStyle: TextStyle(color: Colors.grey[500]), // Warna hint text (abunya)

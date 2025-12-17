@@ -57,13 +57,18 @@ class _RescheduleAppointmentScreenState
     setState(() => _loading = true);
 
     try {
-      await supabase
+      final updated = await supabase
           .from('appointments')
           .update({
             'appointment_date':
-                widget.newDateTime.toUtc().toIso8601String()
+                widget.newDateTime.toIso8601String()
           })
-          .eq('appointment_id', widget.appointmentId);
+          .eq('appointment_id', widget.appointmentId)
+          .select();
+
+      if (updated.isEmpty) {
+        throw Exception('Appointment not found or update failed');
+      }
 
       if (!mounted) return;
 

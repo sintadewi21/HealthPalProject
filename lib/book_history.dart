@@ -5,6 +5,9 @@ import 'add_review_dialog.dart';
 import 'docdetails.dart';
 import 'reschedule1.dart';
 import 'all_doctors_screen.dart';
+import 'location_screen.dart'; // <-- IMPORT FILE BARU
+import 'palnews/palnews_page.dart';
+import 'profile.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -14,6 +17,7 @@ void main() async {
 
 class MyApp extends StatelessWidget {
   const MyApp({Key? key}) : super(key: key);
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -26,18 +30,38 @@ class MyApp extends StatelessWidget {
 
 class MyBookingsScreen extends StatefulWidget {
   const MyBookingsScreen({Key? key}) : super(key: key);
+
   @override
   State<MyBookingsScreen> createState() => _MyBookingsScreenState();
 }
 
 class _MyBookingsScreenState extends State<MyBookingsScreen> with SingleTickerProviderStateMixin {
+  int _currentIndex = 0;  // Indeks untuk Bottom Navigation
+  int _reloadKey = 0;     // Deklarasi _reloadKey
+
   late TabController _tabController;
-  int _reloadKey = 0;
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
+  }
+
+  // Fungsi untuk membuat ikon navbar
+  Widget _buildNavIcon(IconData icon, int index) {
+    final bool isActive = _currentIndex == index;
+    return Container(
+      padding: const EdgeInsets.all(10),
+      decoration: BoxDecoration(
+        color: isActive ? const Color(0xFFF1F3F6) : Colors.transparent,
+        shape: BoxShape.circle,
+      ),
+      child: Icon(
+        icon,
+        size: 24,
+        color: isActive ? const Color(0xFF39434F) : Colors.grey,
+      ),
+    );
   }
 
   @override
@@ -52,33 +76,82 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> with SingleTickerPr
       ),
       body: Column(
         children: [
+          // TabBar untuk menavigasi ke Upcoming, Completed, Canceled
           Container(
             color: Colors.white,
             child: TabBar(
               controller: _tabController,
-              tabs: const [Tab(text: 'Upcoming'), Tab(text: 'Completed'), Tab(text: 'Canceled')],
+              tabs: const [
+                Tab(text: 'Upcoming'),
+                Tab(text: 'Completed'),
+                Tab(text: 'Canceled'),
+              ],
               labelColor: const Color(0xFF1E2A3B),
               unselectedLabelColor: Colors.grey,
               indicatorColor: const Color(0xFF1E2A3B),
             ),
           ),
+          // TabBarView untuk menampilkan konten berdasarkan tab yang dipilih
           Expanded(
             child: TabBarView(
               controller: _tabController,
               children: [
                 UpcomingView(onStatusChanged: () => setState(() => _reloadKey++)),
-                const CompletedView(),
+                CompletedView(onStatusChanged: () => setState(() {})),
                 CanceledView(key: ValueKey(_reloadKey), onStatusChanged: () => setState(() {})),
               ],
             ),
           ),
         ],
       ),
-      // Tombol tambah booking
+      // BottomNavigationBar untuk navigasi tambahan
+      bottomNavigationBar: BottomNavigationBar(
+        currentIndex: _currentIndex,
+        type: BottomNavigationBarType.fixed,
+        backgroundColor: Colors.white,
+        elevation: 0,
+        showSelectedLabels: false,
+        showUnselectedLabels: false,
+        onTap: (index) {
+          setState(() => _currentIndex = index);
+
+          // Navigasi berdasarkan index
+          if (index == 1) {
+            Navigator.of(context).push(MaterialPageRoute(builder: (_) => const LocationScreen()));
+          } else if (index == 2) {
+            Navigator.of(context).push(MaterialPageRoute(builder: (_) => const PalNewsPage()));
+          } else if (index == 3) {
+            Navigator.of(context).push(MaterialPageRoute(builder: (_) => const MyBookingsScreen()));
+          } else if (index == 4) {
+            Navigator.of(context).push(MaterialPageRoute(builder: (_) => const ProfilePage()));
+          }
+        },
+        items: [
+          BottomNavigationBarItem(
+            icon: _buildNavIcon(Icons.home_rounded, 0),
+            label: 'Upcoming',  // Tab pertama - Upcoming
+          ),
+          BottomNavigationBarItem(
+            icon: _buildNavIcon(Icons.location_on_outlined, 1),
+            label: 'Location',
+          ),
+          BottomNavigationBarItem(
+            icon: _buildNavIcon(Icons.article_outlined, 2),
+            label: 'News',
+          ),
+          BottomNavigationBarItem(
+            icon: _buildNavIcon(Icons.calendar_today_outlined, 3),
+            label: 'Booking',
+          ),
+          BottomNavigationBarItem(
+            icon: _buildNavIcon(Icons.person_outline, 4),
+            label: 'Profile',
+          ),
+        ],
+      ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
           Navigator.push(context, MaterialPageRoute(builder: (context) => const AllDoctorsScreen())).then((_) {
-            _tabController.animateTo(0);
             setState(() {});
           });
         },
@@ -136,8 +209,8 @@ class _UpcomingViewState extends State<UpcomingView> {
      final supabase = Supabase.instance.client;
      final user = supabase.auth.currentUser;
      if (user == null) return [];
-     
-     final now = DateTime.now().toUtc();
+
+     final now = DateTime.now();
      final response = await supabase.from('appointments').select('appointment_id, appointment_date, doctor_id, clinic_id')
         .eq('user_id', user.id).eq('status', 'active').gte('appointment_date', now.toIso8601String()).order('appointment_date', ascending: true);
      
@@ -208,7 +281,8 @@ class _UpcomingViewState extends State<UpcomingView> {
                     ),
                   ).then((ok) {
                     if (ok == true) {
-                    _refreshAppointments();
+                      _refreshAppointments();
+                      widget.onStatusChanged();
                     }
                   });
                 },
@@ -242,7 +316,8 @@ class _UpcomingViewState extends State<UpcomingView> {
 // ======================= COMPLETED VIEW =======================
 
 class CompletedView extends StatefulWidget {
-  const CompletedView({Key? key}) : super(key: key);
+  final VoidCallback onStatusChanged;
+  const CompletedView({Key? key, required this.onStatusChanged}) : super(key: key);
   @override
   State<CompletedView> createState() => _CompletedViewState();
 }
@@ -260,8 +335,8 @@ class _CompletedViewState extends State<CompletedView> {
      final supabase = Supabase.instance.client;
      final user = supabase.auth.currentUser;
      if (user == null) return [];
-     
-     final now = DateTime.now().toUtc();
+
+     final now = DateTime.now();
      final response = await supabase.from('appointments').select('appointment_id, appointment_date, doctor_id, clinic_id')
         .eq('user_id', user.id).eq('status', 'active').lt('appointment_date', now.toIso8601String()).order('appointment_date', ascending: false);
      

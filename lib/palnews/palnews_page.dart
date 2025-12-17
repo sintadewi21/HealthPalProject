@@ -5,6 +5,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../homepage.dart';          // ⬅️ untuk navigasi ke Home
 import '../location_screen.dart';   // ⬅️ untuk navigasi ke Location
+import '../profile.dart';            // ⬅️ untuk navigasi ke Profile
 
 import 'palnews_model.dart';
 import 'palnews_repository.dart';
@@ -99,9 +100,12 @@ class _PalNewsPageState extends State<PalNewsPage> {
             );
           } else if (index == 2) {
             // PalNews (lagi di sini) → nggak perlu apa-apa
+          } else if (index == 4) {
+            Navigator.of(context).push(
+              MaterialPageRoute(builder: (_) => const ProfilePage()),
+            );
           }
           // index 3 = Calendar (nanti)
-          // index 4 = Profile (nanti)
         },
         items: [
           BottomNavigationBarItem(

@@ -117,7 +117,7 @@ class _Reschedule1PageState extends State<Reschedule1Page> {
         selectedDate != null && selectedTime != null;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF7F0FA),
+      backgroundColor: Colors.white,
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
@@ -233,6 +233,7 @@ class _Reschedule1PageState extends State<Reschedule1Page> {
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
+                    color: Colors.white,
                   ),
                 ),
               ),

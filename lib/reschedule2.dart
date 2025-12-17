@@ -71,19 +71,93 @@ class _RescheduleAppointmentScreenState
       await showDialog(
         context: context,
         barrierDismissible: false,
-        builder: (_) => AlertDialog(
-          title: const Text('Appointment Updated!'),
-          content: Text(
-            'Your appointment with ${widget.doctorName} has been updated.',
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context), // tutup dialog
-              child: const Text('Done'),
+        barrierColor: Colors.black.withOpacity(0.5), // background gelap
+        builder: (_) {
+          return Dialog(
+            backgroundColor: Colors.transparent,
+            insetPadding: const EdgeInsets.symmetric(horizontal: 24),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 28),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF4F1F6),
+                borderRadius: BorderRadius.circular(24),
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // ✅ ICON CHECK
+                  Container(
+                    width: 96,
+                    height: 96,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: const Color(0xFFD9F3EC),
+                    ),
+                    child: const Center(
+                      child: Icon(
+                        Icons.check,
+                        size: 48,
+                        color: Color(0xFF0FA37F),
+                      ),
+                    ),
+                  ),
+
+                  const SizedBox(height: 20),
+
+                  const Text(
+                    'Congratulations!',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w700,
+                      color: Colors.black,
+                    ),
+                  ),
+
+                  const SizedBox(height: 12),
+
+                  Text(
+                    'Your appointment with ${widget.doctorName}\n'
+                    'has been updated to\n'
+                    '${_formatDate(widget.newDate)}, at ${widget.newTime}.',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Colors.grey.shade700,
+                      height: 1.5,
+                    ),
+                  ),
+
+                  const SizedBox(height: 28),
+
+                  SizedBox(
+                    width: double.infinity,
+                    height: 48,
+                    child: ElevatedButton(
+                      onPressed: () => Navigator.pop(context),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF1C2833),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(24),
+                        ),
+                        elevation: 0,
+                      ),
+                      child: const Text(
+                        'Done',
+                        style: TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
-          ],
-        ),
+          );
+        },
       );
+
 
       // ✅ ini yang bikin balik & ngasih "signal sukses"
       Navigator.pop(context, true);
@@ -118,7 +192,7 @@ class _RescheduleAppointmentScreenState
         ),
       ),
       body: Padding(
-        padding: const EdgeInsets.all(24.0),
+        padding: const EdgeInsets.all(16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -194,7 +268,7 @@ class _RescheduleAppointmentScreenState
             const Spacer(),
             SizedBox(
               width: double.infinity,
-              height: 52, // <- sama seperti reschedule1
+              height: 52, // ✅ SAMA persis
               child: ElevatedButton(
                 onPressed: _loading ? null : _confirmReschedule,
                 style: ElevatedButton.styleFrom(
@@ -202,8 +276,8 @@ class _RescheduleAppointmentScreenState
                   disabledBackgroundColor:
                       const Color(0xFF1C2833).withOpacity(0.5),
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(26),
-                  ), // <- sama seperti reschedule1
+                    borderRadius: BorderRadius.circular(26), // ✅ SAMA persis
+                  ),
                   elevation: 0,
                 ),
                 child: Text(
@@ -211,11 +285,11 @@ class _RescheduleAppointmentScreenState
                   style: const TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
+                    color: Colors.white, // ✅ teks putih
                   ),
                 ),
               ),
             ),
-            const SizedBox(height: 24),
           ],
         ),
       ),
@@ -321,7 +395,7 @@ class SuccessScreen extends StatelessWidget {
               const SizedBox(height: 32),
               SizedBox(
                 width: double.infinity,
-                height: 50,
+                height: 52,
                 child: ElevatedButton(
                   onPressed: () {
                     Navigator.pop(context); // tutup dialog

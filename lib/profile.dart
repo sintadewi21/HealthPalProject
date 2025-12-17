@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-
-// import halaman-halaman kamu yang sudah ada:
+import 'dart:async';
 import 'homepage.dart';
 import 'location_screen.dart';
 import 'palnews/palnews_page.dart';
@@ -19,6 +18,47 @@ class ProfilePage extends StatefulWidget {
 
 class _ProfilePageState extends State<ProfilePage> {
   final supabase = Supabase.instance.client;
+  late final StreamSubscription<AuthState> _authSub;
+  String? _normalizeAvatarPath(String? value) {
+    if (value == null) return null;
+    var v = value.trim();
+    if (v.isEmpty) return null;
+    if (v.startsWith('http')) return v;
+    v = v.replaceFirst(RegExp(r'^/+'), '');
+    final idx = v.indexOf('profile-photos/');
+    if (idx != -1) v = v.substring(idx + 'profile-photos/'.length);
+    return v;
+  }
+
+  Future<Map<String, dynamic>?> _fetchProfile() async {
+    final user = supabase.auth.currentUser;
+    if (user == null) return null;
+
+    final data = await supabase
+        .from('profiles')
+        .select('full_name, email, profile_photo_url')
+        .eq('id', user.id)
+        .maybeSingle();
+
+    final raw = (data?['profile_photo_url'] as String?)?.trim();
+    final normalized = _normalizeAvatarPath(raw);
+
+    String? displayUrl;
+    if (normalized != null && normalized.isNotEmpty) {
+      if (normalized.startsWith('http')) {
+        displayUrl = normalized;
+      } else {
+        displayUrl = await supabase.storage
+            .from('profile-photos')
+            .createSignedUrl(normalized, 60 * 60); // 1 jam
+      }
+    }
+
+    return {
+      ...?data,
+     'profile_photo_url': displayUrl,
+    };
+  }
   int _currentIndex = 4;
 
   Future<Map<String, dynamic>?>? _profileFuture;
@@ -27,31 +67,24 @@ class _ProfilePageState extends State<ProfilePage> {
   void initState() {
     super.initState();
 
-    final user = supabase.auth.currentUser;
-    if (user != null) {
-      // ✅ ambil full_name + nickname + email dari table profiles
-      _profileFuture = supabase
-          .from('profiles')
-          .select('full_name, nickname, email')
-          .eq('id', user.id)
-          .maybeSingle();
-    } else {
-      _profileFuture = Future.value(null);
-    }
+    _profileFuture = _fetchProfile();
+
+    _authSub = supabase.auth.onAuthStateChange.listen((_) {
+      if (!mounted) return;
+      setState(() => _profileFuture = _fetchProfile());
+    });
+  }
+
+  @override
+  void dispose() {
+    _authSub.cancel();
+    super.dispose();
   }
 
   Future<void> _reloadProfile() async {
-    final user = supabase.auth.currentUser;
-    if (user == null) return;
-
-    setState(() {
-      _profileFuture = supabase
-          .from('profiles')
-          .select('full_name, nickname, email')
-          .eq('id', user.id)
-          .maybeSingle();
-    });
-  }  
+    if (supabase.auth.currentUser == null) return;
+    setState(() => _profileFuture = _fetchProfile());
+  }
 
   Future<void> _showLogoutDialog() async {
     final bool? yes = await showDialog<bool>(
@@ -169,23 +202,61 @@ class _ProfilePageState extends State<ProfilePage> {
                 final data = snapshot.data;
 
                 final fullName = (data?['full_name'] as String?)?.trim();
-                final nickname = (data?['nickname'] as String?)?.trim();
-                final profileEmail = (data?['email'] as String?)?.trim();
+                final email = (data?['email'] as String?)?.trim();
+                final photoUrl = (data?['profile_photo_url'] as String?)?.trim();
 
-                final displayName = (fullName != null && fullName.isNotEmpty)
-                    ? fullName
-                    : ((nickname != null && nickname.isNotEmpty)
-                        ? nickname
-                        : (user?.email ?? 'Your Name'));
-
-                final displayEmail = (profileEmail != null && profileEmail.isNotEmpty)
-                    ? profileEmail
-                    : (user?.email ?? '');
+                String initial = 'U';
+                if (fullName != null && fullName.isNotEmpty) {
+                  initial = fullName[0].toUpperCase();
+                }
 
                 return Column(
                   children: [
+                    // ✅ FOTO PROFIL
+                    Container(
+                      width: 140,
+                      height: 140,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: const Color(0xFFF1F3F6),
+                        border: Border.all(color: Colors.grey.shade300, width: 1),
+                      ),
+                      child: ClipOval(
+                        child: (photoUrl != null && photoUrl.isNotEmpty)
+                            ? Image.network(
+                                photoUrl,
+                                fit: BoxFit.cover,
+                                errorBuilder: (_, __, ___) {
+                                  return Center(
+                                    child: Text(
+                                      initial,
+                                      style: const TextStyle(
+                                        fontSize: 36, // ✅ ikut dibesarin biar proporsional
+                                        fontWeight: FontWeight.w800,
+                                        color: Color(0xFF1E2A3B),
+                                      ),
+                                    ),
+                                  );
+                                },
+                              )
+                            : Center(
+                                child: Text(
+                                  initial,
+                                  style: const TextStyle(
+                                    fontSize: 36, // ✅ ikut dibesarin
+                                    fontWeight: FontWeight.w800,
+                                    color: Color(0xFF1E2A3B),
+                                  ),
+                                ),
+                              ),
+                      ),
+                    ),
+
+                    const SizedBox(height: 12),
+
+                    // ✅ NAMA
                     Text(
-                      displayName,
+                      (fullName != null && fullName.isNotEmpty) ? fullName : 'Your Name',
                       style: const TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w700,
@@ -193,8 +264,10 @@ class _ProfilePageState extends State<ProfilePage> {
                       ),
                     ),
                     const SizedBox(height: 4),
+
+                    // ✅ EMAIL
                     Text(
-                      displayEmail,
+                      email ?? '',
                       style: const TextStyle(color: Colors.grey),
                     ),
                   ],
@@ -203,7 +276,6 @@ class _ProfilePageState extends State<ProfilePage> {
             ),
 
             const SizedBox(height: 20),
-            insetDivider(),
 
             _MenuItem(
               icon: Icons.person_outline,
@@ -270,6 +342,7 @@ class _ProfilePageState extends State<ProfilePage> {
                 setState(() {}); // refresh badge saat balik
               },
             ),
+            insetDivider(),
 
             _MenuItem(
               icon: Icons.calendar_today_outlined,

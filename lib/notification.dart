@@ -10,8 +10,8 @@ class NotificationPage extends StatefulWidget {
 }
 
 class _NotificationPageState extends State<NotificationPage> {
+  bool _marking = false;
   final supabase = Supabase.instance.client;
-
   List<NotificationItem> items = [];
   StreamSubscription? _sub;
   bool loading = true;
@@ -21,7 +21,6 @@ class _NotificationPageState extends State<NotificationPage> {
     super.initState();
     _load();
     _listenRealtime();
-    _markAllAsRead();
   }
 
   Future<void> _load() async {
@@ -65,23 +64,49 @@ class _NotificationPageState extends State<NotificationPage> {
     super.dispose();
   }
 
-  Future<void> _markAllAsRead() async {
+  Future<void> _markIdsAsRead(List<String> ids) async {
     final user = supabase.auth.currentUser;
     if (user == null) return;
+    if (ids.isEmpty) return;
+    if (_marking) return;
 
-    await supabase
-        .from('notifications')
-        .update({'status': 'read'})
-        .eq('user_id', user.id)
-        .eq('status', 'unread');
+    setState(() => _marking = true);
 
-    // realtime stream akan auto update UI, tapi aman juga panggil _load() kalau perlu
+    try {
+      // Minta return id yang ter-update biar kita bisa update UI lokal juga
+      final updated = await supabase
+          .from('notifications')
+          .update({'status': 'read'})
+          .eq('user_id', user.id)
+          .inFilter('notification_id', ids)
+          .select('notification_id');
+
+      final updatedIds = (updated as List)
+          .map((e) => (e as Map<String, dynamic>)['notification_id'] as String)
+          .toSet();
+
+      // Update UI lokal langsung (biar tile jadi abu + badge turun)
+      setState(() {
+        items = items
+            .map((n) => updatedIds.contains(n.id) ? n.copyWith(status: 'read') : n)
+            .toList();
+      });
+
+      // Optional: reload sebagai safety
+      // await _load();
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Mark all failed: $e')),
+      );
+    } finally {
+      if (mounted) setState(() => _marking = false);
+    }
   }
+
 
   @override
   Widget build(BuildContext context) {
-    final unreadCount = items.where((x) => x.status == 'unread').length;
-
     if (loading) {
       return const Scaffold(
         body: Center(child: CircularProgressIndicator()),
@@ -89,16 +114,24 @@ class _NotificationPageState extends State<NotificationPage> {
     }
 
     final now = DateTime.now();
+    final unreadCount = items.where((x) => x.status == 'unread').length;
+
     bool isToday(DateTime d) =>
         d.year == now.year && d.month == now.month && d.day == now.day;
 
     bool isYesterday(DateTime d) {
-      final y = DateTime(now.year, now.month, now.day).subtract(const Duration(days: 1));
+      final y = DateTime(now.year, now.month, now.day)
+          .subtract(const Duration(days: 1));
       return d.year == y.year && d.month == y.month && d.day == y.day;
     }
 
     final today = items.where((x) => isToday(x.createdAt)).toList();
     final yesterday = items.where((x) => isYesterday(x.createdAt)).toList();
+
+    final todayUnreadIds =
+        today.where((x) => x.status == 'unread').map((x) => x.id).toList();
+    final yesterdayUnreadIds =
+        yesterday.where((x) => x.status == 'unread').map((x) => x.id).toList();
 
     return Scaffold(
       backgroundColor: const Color(0xFFF7F8FA),
@@ -115,34 +148,43 @@ class _NotificationPageState extends State<NotificationPage> {
           style: TextStyle(color: Colors.black, fontWeight: FontWeight.w600),
         ),
         actions: [
-          Container(
-            margin: const EdgeInsets.only(right: 16),
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-            decoration: BoxDecoration(
-              color: const Color(0xFF1E5EFF),
-              borderRadius: BorderRadius.circular(16),
+          if (unreadCount > 0)
+            Container(
+              margin: const EdgeInsets.only(right: 16),
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+              decoration: BoxDecoration(
+                color: const Color(0xFFEFF1F5),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Text(
+                '$unreadCount New',
+                style: const TextStyle(
+                  color: Colors.black,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
             ),
-            child: Text(
-              '$unreadCount New',
-              style: const TextStyle(color: Colors.white, fontSize: 12),
-            ),
-          ),
         ],
       ),
       body: ListView(
         children: [
           const SizedBox(height: 8),
+
           _SectionHeader(
             title: 'TODAY',
-            onMarkAll: _markAllAsRead,
+            enabled: !_marking && todayUnreadIds.isNotEmpty,
+            onMarkAll: () => _markIdsAsRead(todayUnreadIds),
           ),
           ...today.map((n) => NotificationTile(item: n)).toList(),
-          const SizedBox(height: 8),
+
           _SectionHeader(
             title: 'YESTERDAY',
-            onMarkAll: _markAllAsRead,
+            enabled: !_marking && yesterdayUnreadIds.isNotEmpty,
+            onMarkAll: () => _markIdsAsRead(yesterdayUnreadIds),
           ),
           ...yesterday.map((n) => NotificationTile(item: n)).toList(),
+
           const SizedBox(height: 16),
         ],
       ),
@@ -153,14 +195,18 @@ class _NotificationPageState extends State<NotificationPage> {
 class _SectionHeader extends StatelessWidget {
   final String title;
   final VoidCallback onMarkAll;
+  final bool enabled;
 
-  const _SectionHeader({required this.title, required this.onMarkAll});
+  const _SectionHeader({
+    required this.title,
+    required this.onMarkAll,
+    required this.enabled,
+  });
 
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20.0)
-          .copyWith(top: 12, bottom: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 20.0).copyWith(top: 14, bottom: 6),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
@@ -168,18 +214,19 @@ class _SectionHeader extends StatelessWidget {
             title,
             style: const TextStyle(
               fontSize: 13,
-              fontWeight: FontWeight.w600,
-              color: Colors.grey,
+              fontWeight: FontWeight.w700,
+              color: Color(0xFF9AA3AE),
+              letterSpacing: 0.4,
             ),
           ),
-          GestureDetector(
-            onTap: onMarkAll,
-            child: const Text(
+          InkWell(
+            onTap: enabled ? onMarkAll : null,
+            child: Text(
               'Mark all as read',
               style: TextStyle(
                 fontSize: 13,
-                fontWeight: FontWeight.w500,
-                color: Color(0xFF1E5EFF),
+                fontWeight: FontWeight.w600,
+                color: enabled ? Colors.black : const Color(0xFFB8C0CC),
               ),
             ),
           ),
@@ -200,7 +247,7 @@ class NotificationTile extends StatelessWidget {
     final bool isHighlighted = item.status == 'unread';
 
     return Container(
-      color: isHighlighted ? Colors.white : const Color(0xFFF5F6FA),
+      color: isHighlighted ? Colors.white : const Color(0xFFF0F2F6),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 10),
@@ -277,6 +324,22 @@ class NotificationItem {
     required this.createdAt,
   });
 
+  // ✅ Tambahan: biar bisa update status di UI setelah mark-all
+  NotificationItem copyWith({
+    String? message,
+    NotificationType? type,
+    String? status,
+    DateTime? createdAt,
+  }) {
+    return NotificationItem(
+      id: id,
+      message: message ?? this.message,
+      type: type ?? this.type,
+      status: status ?? this.status,
+      createdAt: createdAt ?? this.createdAt,
+    );
+  }
+
   factory NotificationItem.fromMap(Map<String, dynamic> map) {
     final t = (map['notif_type'] as String?) ?? 'changed';
 
@@ -292,12 +355,17 @@ class NotificationItem {
         type = NotificationType.changed;
     }
 
+    final createdRaw = map['created_at'];
+    final createdAt = createdRaw is String
+        ? DateTime.parse(createdRaw).toLocal()
+        : (createdRaw as DateTime).toLocal();
+
     return NotificationItem(
       id: map['notification_id'] as String,
-      message: map['message'] as String,
+      message: (map['message'] as String?) ?? '',
       type: type,
       status: (map['status'] as String?) ?? 'unread',
-      createdAt: DateTime.parse(map['created_at'] as String).toLocal(),
+      createdAt: createdAt,
     );
   }
 

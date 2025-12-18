@@ -85,6 +85,39 @@ class _Reschedule1PageState extends State<Reschedule1Page> {
     }
   }
 
+  bool _isTimeSelectable(String time) {
+    if (selectedDate == null) return false;
+
+    // Parse time to check if it's selectable
+    final timeParts = time.split(' ');
+    final hourMinute = timeParts[0].split('.');
+    int hour = int.parse(hourMinute[0]);
+    int minute = int.parse(hourMinute[1]);
+
+    if (timeParts[1] == 'PM' && hour != 12) {
+      hour += 12;
+    } else if (timeParts[1] == 'AM' && hour == 12) {
+      hour = 0;
+    }
+
+    DateTime now = DateTime.now();
+    DateTime todayOnly = DateTime(now.year, now.month, now.day);
+    DateTime selectedDateOnly = DateTime(selectedDate!.year, selectedDate!.month, selectedDate!.day);
+
+    bool isSelectable = true;
+    if (selectedDateOnly.isAtSameMomentAs(todayOnly)) {
+      // If selected date is today, check if time is after now
+      DateTime slotTime = DateTime(now.year, now.month, now.day, hour, minute);
+      isSelectable = slotTime.isAfter(now) || slotTime.isAtSameMomentAs(DateTime(now.year, now.month, now.day, now.hour, now.minute));
+    } else if (selectedDateOnly.isBefore(todayOnly)) {
+      // If selected date is before today, only allow if it's the selected time (for editing)
+      isSelectable = selectedTime == time;
+    }
+    // If selected date is after today, all times are selectable
+
+    return isSelectable;
+  }
+
   Future<void> _confirm() async {
     if (selectedDate == null || selectedTime == null) return;
 
@@ -182,23 +215,24 @@ class _Reschedule1PageState extends State<Reschedule1Page> {
               runSpacing: 12,
               children: timeSlots.map((t) {
                 final isSelected = selectedTime == t;
+                final isSelectable = _isTimeSelectable(t);
 
                 return SizedBox(
                   width: 110,
                   height: 44,
                   child: OutlinedButton(
-                    onPressed: () =>
-                        setState(() => selectedTime = t),
+                    onPressed: isSelectable ? () =>
+                        setState(() => selectedTime = t) : null,
                     style: OutlinedButton.styleFrom(
                       backgroundColor: isSelected
                           ? const Color(0xFF1C2833)
                           : Colors.white,
                       foregroundColor:
-                          isSelected ? Colors.white : Colors.black,
+                          isSelected ? Colors.white : (isSelectable ? Colors.black : Colors.grey.shade400),
                       side: BorderSide(
                         color: isSelected
                             ? const Color(0xFF1C2833)
-                            : Colors.grey.shade300,
+                            : (isSelectable ? Colors.grey.shade300 : Colors.grey.shade200),
                       ),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(10),

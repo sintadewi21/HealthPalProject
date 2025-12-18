@@ -16,14 +16,17 @@ class BookAppointmentPage extends StatefulWidget {
 }
 
 class _BookAppointmentPageState extends State<BookAppointmentPage> {
-  DateTime selectedDate = DateTime(2025, 12, 1);
-  DateTime displayedMonth = DateTime(2025, 12);
-  String selectedTime = '10.00 AM';
+  late DateTime selectedDate;
+  late DateTime displayedMonth;
+  String selectedTime = '';
   String? _createdAppointmentId; // Store the ID of the newly created appointment
 
   @override
   void initState() {
     super.initState();
+    DateTime now = DateTime.now();
+    selectedDate = DateTime(now.year, now.month, now.day);
+    displayedMonth = DateTime(now.year, now.month);
     if (widget.appointmentId != null) {
       _loadAppointmentData();
     }
@@ -60,6 +63,14 @@ Future<bool> _saveAppointment() async {
       // Handle not logged in
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Please log in to book an appointment')),
+      );
+      return false;
+    }
+
+    // Validate that date and time are selected
+    if (selectedTime.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please select a time for your appointment')),
       );
       return false;
     }
@@ -257,8 +268,10 @@ Future<bool> _saveAppointment() async {
         ),
         child: ElevatedButton(
           onPressed: () async {
-            await _saveAppointment();
-            _showSuccessDialog(context);
+            bool success = await _saveAppointment();
+            if (success) {
+              _showSuccessDialog(context);
+            }
           },
           style: ElevatedButton.styleFrom(
             backgroundColor: const Color(0xFF1E2A3B),
@@ -457,8 +470,11 @@ Future<bool> _saveAppointment() async {
                 today.month == month &&
                 today.day == thisDate.day;
 
+            DateTime todayOnly = DateTime(today.year, today.month, today.day);
+            bool isSelectable = isCurrentMonth && (thisDate.isAtSameMomentAs(todayOnly) || thisDate.isAfter(todayOnly) || thisDate.isAtSameMomentAs(selectedDate));
+
             return GestureDetector(
-              onTap: isCurrentMonth ? () {
+              onTap: isSelectable ? () {
                 setState(() {
                   selectedDate = thisDate;
                 });
@@ -472,7 +488,7 @@ Future<bool> _saveAppointment() async {
                           ? Colors.blue.shade100
                           : Colors.transparent,
                   border: Border.all(
-                    color: Colors.grey.shade300,
+                    color: isSelectable ? Colors.grey.shade300 : Colors.grey.shade200,
                     width: 0.5,
                   ),
                   borderRadius: BorderRadius.circular(8),
@@ -487,7 +503,7 @@ Future<bool> _saveAppointment() async {
                           : isToday
                               ? Colors.blue.shade800
                               : isCurrentMonth
-                                  ? Colors.black
+                                  ? (isSelectable ? Colors.black : Colors.grey.shade400)
                                   : Colors.grey.withOpacity(0.6),
                       fontWeight: isSelected || isToday
                           ? FontWeight.bold
@@ -507,25 +523,53 @@ Future<bool> _saveAppointment() async {
   // TIME SLOT WIDGET
   Widget _buildTimeSlot(String time) {
     final isSelected = time == selectedTime;
+
+    // Parse time to check if it's selectable
+    final timeParts = time.split(' ');
+    final hourMinute = timeParts[0].split('.');
+    int hour = int.parse(hourMinute[0]);
+    int minute = int.parse(hourMinute[1]);
+
+    if (timeParts[1] == 'PM' && hour != 12) {
+      hour += 12;
+    } else if (timeParts[1] == 'AM' && hour == 12) {
+      hour = 0;
+    }
+
+    DateTime now = DateTime.now();
+    DateTime todayOnly = DateTime(now.year, now.month, now.day);
+    DateTime selectedDateOnly = DateTime(selectedDate.year, selectedDate.month, selectedDate.day);
+
+    bool isSelectable = true;
+    if (selectedDateOnly.isAtSameMomentAs(todayOnly)) {
+      // If selected date is today, check if time is after now
+      DateTime slotTime = DateTime(now.year, now.month, now.day, hour, minute);
+      isSelectable = slotTime.isAfter(now) || slotTime.isAtSameMomentAs(DateTime(now.year, now.month, now.day, now.hour, now.minute));
+    } else if (selectedDateOnly.isBefore(todayOnly)) {
+      // If selected date is before today, only allow if it's the selected time (for editing)
+      isSelectable = isSelected;
+    }
+    // If selected date is after today, all times are selectable
+
     return GestureDetector(
-      onTap: () {
+      onTap: isSelectable ? () {
         setState(() {
           selectedTime = time;
         });
-      },
+      } : null,
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
         decoration: BoxDecoration(
           color: isSelected ? const Color(0xFF1E2A3B) : Colors.white,
           borderRadius: BorderRadius.circular(8),
           border: Border.all(
-            color: isSelected ? const Color(0xFF1E2A3B) : Colors.grey[300]!,
+            color: isSelected ? const Color(0xFF1E2A3B) : (isSelectable ? Colors.grey[300]! : Colors.grey.shade200),
           ),
         ),
         child: Text(
           time,
           style: TextStyle(
-            color: isSelected ? Colors.white : Colors.black,
+            color: isSelected ? Colors.white : (isSelectable ? Colors.black : Colors.grey.shade400),
             fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
           ),
         ),

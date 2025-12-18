@@ -26,7 +26,7 @@ Backend aplikasi ini menggunakan **Supabase (PostgreSQL)** sebagai *Backend as a
 * 🔍 **Pencarian Dokter:** Filter berdasarkan spesialisasi.
 * 📅 **Manajemen Janji Temu:** Booking, Reschedule, dan Cancel.
 * ⭐ **Rating & Review:** Ulasan pelayanan dokter.
-* 🔔 **Sistem Notifikasi:** Pengingat jadwal konsultasi.
+* 🔔 **Sistem Notifikasi:** Notifikasi status konsultasi secara real-time.
 * 📰 **PalNews:** Artikel literasi kesehatan.
 
 

@@ -98,67 +98,34 @@ Backend aplikasi ini menggunakan **Supabase (PostgreSQL)** sebagai *Backend as a
 
 ## 📁 Struktur File Project
 
-HealthPalProject/lib
-├── palnews
-│   ├── palnews_detail_page.dart
-│   │   └── Menampilkan isi artikel terkait kesehatan
-│   ├── palnews_model.dart
-│   │   └── Model data Flutter untuk merepresentasikan satu berita dan
-│   │       mengonversi data JSON dari API agar mudah ditampilkan di UI
-│   ├── palnews_page.dart
-│   │   └── Halaman utama PalNews, berisi kolom pencarian dan
-│   │       kategori sorting
-│   ├── palnews_repository.dart
-│   │   └── Mengambil data artikel terkait kesehatan
-│   └── widgets
-│       ├── palnews_category_chip.dart
-│       │   └── Menampilkan dan memilih kategori berita
-│       └── palnews_news_card.dart
-│           └── Menampilkan card berisi bagian utama berita
-│               pada halaman utama
-│
-├── add_review_dialog.dart
-│   └── Dialog/form untuk menambahkan rating dan ulasan dokter
-├── all_doctors_screen.dart
-│   └── Menampilkan daftar seluruh dokter yang tersedia
-├── book_appointment_page.dart
-│   └── Halaman pemesanan appointment dengan dokter
-├── book_history.dart
-│   └── Menampilkan riwayat pemesanan appointment dokter
-├── docdetails.dart
-│   └── Menampilkan detail informasi dokter
-├── edit_profile.dart
-│   └── Mengubah data profil pengguna
-├── fill_profile.dart
-│   └── Pengisian data profil pengguna setelah registrasi
-├── homepage.dart
-│   └── Halaman utama aplikasi, berisi menu yang mengarah
-│       ke fitur-fitur
-├── location_screen.dart
-│   └── Menampilkan lokasi layanan kesehatan atau
-│       praktik dokter
-├── main_layout.dart
-│   └── Layout utama aplikasi yang mengatur navigasi
-│       antar halaman menggunakan Bottom Navigation Bar
-├── main.dart
-│   └── Halaman inisiasi project berisi pengaturan awal
-│       ketika aplikasi dijalankan
-├── notification.dart
-│   └── Notifikasi pengguna seperti konfirmasi booking,
-│       perubahan jadwal, dan pembatalan janji temu
-├── onboarding.dart
-│   └── Halaman pertama kali membuka aplikasi
-├── profile.dart
-│   └── Menampilkan profil pengguna dan akses pengaturan
-├── reschedule1.dart
-│   └── Tahap awal proses penjadwalan ulang
-├── reschedule2.dart
-│   └── Tahap konfirmasi perubahan jadwal
-├── sign_in.dart
-│   └── Halaman masuk ke akun terdaftar
-└── sign_up.dart
-    └── Halaman pendaftaran akun pengguna
-
+| File / Folder                                | Penjelasan                                                                            |
+| -------------------------------------------- | ------------------------------------------------------------------------------------- |
+| `palnews/`                                   | Folder yang menangani fitur artikel kesehatan (PalNews).                              |
+| `palnews/palnews_detail_page.dart`           | Menampilkan isi artikel kesehatan secara lengkap.                                     |
+| `palnews/palnews_model.dart`                 | Model data Flutter untuk merepresentasikan berita dan mengonversi data JSON dari API. |
+| `palnews/palnews_page.dart`                  | Halaman utama PalNews yang berisi fitur pencarian dan filter kategori.                |
+| `palnews/palnews_repository.dart`            | Mengambil data artikel kesehatan dari API.                                            |
+| `palnews/widgets/`                           | Kumpulan widget khusus fitur PalNews.                                                 |
+| `palnews/widgets/palnews_category_chip.dart` | Widget untuk menampilkan dan memilih kategori berita.                                 |
+| `palnews/widgets/palnews_news_card.dart`     | Widget card berita pada halaman utama PalNews.                                        |
+| `add_review_dialog.dart`                     | Dialog/form untuk menambahkan rating dan ulasan dokter.                               |
+| `all_doctors_screen.dart`                    | Menampilkan daftar seluruh dokter yang tersedia.                                      |
+| `book_appointment_page.dart`                 | Halaman pemesanan janji temu dengan dokter.                                           |
+| `book_history.dart`                          | Menampilkan riwayat pemesanan janji temu dokter.                                      |
+| `docdetails.dart`                            | Menampilkan detail informasi dokter.                                                  |
+| `edit_profile.dart`                          | Halaman untuk mengubah data profil pengguna.                                          |
+| `fill_profile.dart`                          | Pengisian data profil pengguna setelah registrasi.                                    |
+| `homepage.dart`                              | Halaman utama aplikasi yang berisi menu navigasi ke fitur utama.                      |
+| `location_screen.dart`                       | Menampilkan lokasi layanan kesehatan atau praktik dokter.                             |
+| `main_layout.dart`                           | Layout utama aplikasi yang mengatur navigasi menggunakan Bottom Navigation Bar.       |
+| `main.dart`                                  | Entry point aplikasi berisi inisialisasi awal (routing, konfigurasi, dsb).            |
+| `notification.dart`                          | Menampilkan notifikasi pengguna seperti konfirmasi booking dan perubahan jadwal.      |
+| `onboarding.dart`                            | Halaman onboarding saat aplikasi pertama kali dijalankan.                             |
+| `profile.dart`                               | Menampilkan profil pengguna dan akses ke pengaturan akun.                             |
+| `reschedule1.dart`                           | Tahap awal proses penjadwalan ulang janji temu.                                       |
+| `reschedule2.dart`                           | Tahap konfirmasi perubahan jadwal.                                                    |
+| `sign_in.dart`                               | Halaman login pengguna.                                                               |
+| `sign_up.dart`                               | Halaman pendaftaran akun pengguna.                                                    |
 
 
 

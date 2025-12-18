@@ -2,11 +2,6 @@
 
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-
-import '../homepage.dart';          // ⬅️ untuk navigasi ke Home
-import '../location_screen.dart';   // ⬅️ untuk navigasi ke Location
-import '../profile.dart';            // ⬅️ untuk navigasi ke Profile
-
 import 'palnews_model.dart';
 import 'palnews_repository.dart';
 import 'palnews_detail_page.dart';
@@ -32,9 +27,6 @@ class _PalNewsPageState extends State<PalNewsPage> {
   final PageController _trendingController = PageController();
   int _currentTrendingIndex = 0;
 
-  // ⬇️ NAVBAR STATE (tab PalNews aktif)
-  int _currentIndex = 2;
-
   @override
   void initState() {
     super.initState();
@@ -54,83 +46,10 @@ class _PalNewsPageState extends State<PalNewsPage> {
     );
   }
 
-  // ⬇️ SAMA SEPERTI DI HOMESCREEN
-  Widget _buildNavIcon(IconData icon, int index) {
-    final bool isActive = _currentIndex == index;
-
-    return Container(
-      padding: const EdgeInsets.all(10),
-      decoration: BoxDecoration(
-        color: isActive ? const Color(0xFFF1F3F6) : Colors.transparent,
-        shape: BoxShape.circle,
-      ),
-      child: Icon(
-        icon,
-        size: 24,
-        color: isActive ? const Color(0xFF39434F) : Colors.grey,
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-
-      // =============== NAVBAR PALING BAWAH ===============
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _currentIndex,
-        type: BottomNavigationBarType.fixed,
-        backgroundColor: Colors.white,
-        elevation: 0,
-        showSelectedLabels: false,
-        showUnselectedLabels: false,
-        onTap: (index) {
-          setState(() => _currentIndex = index);
-
-          if (index == 0) {
-            // ke Home
-            Navigator.of(context).pushReplacement(
-              MaterialPageRoute(builder: (_) => const HomeScreen()),
-            );
-          } else if (index == 1) {
-            // ke Location
-            Navigator.of(context).pushReplacement(
-              MaterialPageRoute(builder: (_) => const LocationScreen()),
-            );
-          } else if (index == 2) {
-            // PalNews (lagi di sini) → nggak perlu apa-apa
-          } else if (index == 4) {
-            Navigator.of(context).push(
-              MaterialPageRoute(builder: (_) => const ProfilePage()),
-            );
-          }
-          // index 3 = Calendar (nanti)
-        },
-        items: [
-          BottomNavigationBarItem(
-            icon: _buildNavIcon(Icons.home_rounded, 0),
-            label: '',
-          ),
-          BottomNavigationBarItem(
-            icon: _buildNavIcon(Icons.location_on_outlined, 1),
-            label: '',
-          ),
-          BottomNavigationBarItem(
-            icon: _buildNavIcon(Icons.article_outlined, 2),
-            label: '',
-          ),
-          BottomNavigationBarItem(
-            icon: _buildNavIcon(Icons.calendar_today_outlined, 3),
-            label: '',
-          ),
-          BottomNavigationBarItem(
-            icon: _buildNavIcon(Icons.person_outline, 4),
-            label: '',
-          ),
-        ],
-      ),
-
       // ================== BODY PALNEWS ==================
       body: SafeArea(
         child: Column(
@@ -234,8 +153,7 @@ class _PalNewsPageState extends State<PalNewsPage> {
                   }
                   final categories = <String>['All', ...categorySet.toList()];
                   final chipIndex =
-                      selectedCategoryIndex.clamp(0, categories.length - 1)
-                          as int;
+                      selectedCategoryIndex.clamp(0, categories.length - 1) as int;
 
                   // --- FILTER BERDASARKAN KATEGORI & SEARCH ---
                   List<PalNewsItem> filtered = allNews;

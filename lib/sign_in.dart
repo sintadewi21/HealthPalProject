@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'sign_up.dart'; // Perbaikan import
 import 'homepage.dart';
+import 'main_layout.dart';
 
 // Asumsi global instance 'supabase' sudah tersedia (dari main.dart)
 final supabase = Supabase.instance.client;
@@ -73,8 +74,14 @@ class _SignInScreenState extends State<SignInScreen> {
         // Log In Berhasil!
         
         // FIX: Navigasi langsung ke HomeScreen
-        Navigator.of(context).pushReplacement(
-            MaterialPageRoute(builder: (context) => const HomeScreen()),
+        // Navigator.of(context).pushReplacement(
+        //     MaterialPageRoute(builder: (context) => const HomeScreen()),
+        // );
+
+        // Di dalam fungsi login success:
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const MainLayout()), // Arahkan ke MainLayout
         );
 
       } 

@@ -198,6 +198,12 @@ class _AddReviewDialogState extends State<AddReviewDialog> {
               TextField(
                 controller: _reviewController,
                 maxLines: 4,
+                
+                // 👇 INI PERUBAHANNYA
+                // Setting ini membolehkan kamu ngetik pakai laptop, 
+                // tapi melarang UI Keyboard HP (atau Simulator) buat muncul.
+                keyboardType: TextInputType.none, 
+                
                 decoration: InputDecoration(
                   hintText: 'Share your experience...',
                   hintStyle: TextStyle(color: Colors.grey[400], fontSize: 13),

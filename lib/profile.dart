@@ -364,43 +364,6 @@ class _ProfilePageState extends State<ProfilePage> {
           ],
         ),
       ),
-
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _currentIndex,
-        type: BottomNavigationBarType.fixed,
-        backgroundColor: Colors.white,
-        elevation: 0,
-        showSelectedLabels: false,
-        showUnselectedLabels: false,
-        onTap: (index) {
-          setState(() => _currentIndex = index);
-
-          if (index == 0) {
-            Navigator.of(context).pushReplacement(
-              MaterialPageRoute(builder: (_) => const HomeScreen()),
-            );
-          } else if (index == 1) {
-            Navigator.of(context).pushReplacement(
-              MaterialPageRoute(builder: (_) => const LocationScreen()),
-            );
-          } else if (index == 2) {
-            Navigator.of(context).pushReplacement(
-              MaterialPageRoute(builder: (_) => const PalNewsPage()),
-            );
-          } else if (index == 3) {
-            Navigator.of(context).pushReplacement(
-              MaterialPageRoute(builder: (_) => const MyBookingsScreen()),
-            );
-          }
-        },
-        items: [
-          BottomNavigationBarItem(icon: _navIcon(Icons.home_rounded, 0), label: ''),
-          BottomNavigationBarItem(icon: _navIcon(Icons.location_on_outlined, 1), label: ''),
-          BottomNavigationBarItem(icon: _navIcon(Icons.article_outlined, 2), label: ''),
-          BottomNavigationBarItem(icon: _navIcon(Icons.calendar_today_outlined, 3), label: ''),
-          BottomNavigationBarItem(icon: _navIcon(Icons.person_outline, 4), label: ''),
-        ],
-      ),
     );
   }
 

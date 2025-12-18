@@ -7,6 +7,7 @@ import 'palnews/palnews_page.dart';
 import 'book_history.dart'; // TAMBAHKAN IMPORT
 import 'profile.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'main_layout.dart';
 
 /// =================== HOME SCREEN ===================
 
@@ -136,64 +137,6 @@ class _HomeScreenState extends State<HomeScreen> {
 
     return Scaffold(
       backgroundColor: const Color(0xFFF7F8FA),
-
-      // ================== BOTTOM NAVBAR ==================
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _currentIndex,
-        type: BottomNavigationBarType.fixed,
-        backgroundColor: Colors.white,
-        elevation: 0,
-        showSelectedLabels: false,
-        showUnselectedLabels: false,
-        onTap: (index) {
-          setState(() => _currentIndex = index);
-
-          if (index == 1) {
-            // TAB LOCATION
-            Navigator.of(context).push(
-              MaterialPageRoute(builder: (_) => const LocationScreen()),
-            );
-          } else if (index == 2) {
-            // TAB PALNEWS
-            Navigator.of(context).push(
-              MaterialPageRoute(builder: (_) => const PalNewsPage()),
-            );
-          } else if (index == 3) {
-            // TAB CALENDAR → NAVIGATE KE BOOK_CANCEL
-            Navigator.of(context).push(
-              MaterialPageRoute(builder: (_) => const MyBookingsScreen()),
-            );
-          } else if (index == 4) {
-            Navigator.of(context).push(
-              MaterialPageRoute(builder: (_) => const ProfilePage()),
-            );
-          }
-          // index 0 = Home (stay)
-        },
-        items: [
-          BottomNavigationBarItem(
-            icon: _buildNavIcon(Icons.home_rounded, 0),
-            label: '',
-          ),
-          BottomNavigationBarItem(
-            icon: _buildNavIcon(Icons.location_on_outlined, 1),
-            label: '',
-          ),
-          BottomNavigationBarItem(
-            icon: _buildNavIcon(Icons.article_outlined, 2),
-            label: '',
-          ),
-          BottomNavigationBarItem(
-            icon: _buildNavIcon(Icons.calendar_today_outlined, 3),
-            label: '',
-          ),
-          BottomNavigationBarItem(
-            icon: _buildNavIcon(Icons.person_outline, 4),
-            label: '',
-          ),
-        ],
-      ),
-
       // ================== BODY ==================
       body: SafeArea(
         child: SingleChildScrollView(
@@ -700,7 +643,7 @@ class SuccessScreen extends StatefulWidget {
 class _SuccessScreenState extends State<SuccessScreen> {
   void _navigateToHome() {
     Navigator.of(context).pushReplacement(
-      MaterialPageRoute(builder: (context) => const HomeScreen()),
+      MaterialPageRoute(builder: (context) => const MainLayout()),
     );
   }
 

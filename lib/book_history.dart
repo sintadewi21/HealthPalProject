@@ -5,9 +5,6 @@ import 'add_review_dialog.dart';
 import 'docdetails.dart';
 import 'reschedule1.dart';
 import 'all_doctors_screen.dart';
-import 'location_screen.dart'; // <-- IMPORT FILE BARU
-import 'palnews/palnews_page.dart';
-import 'profile.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -36,7 +33,6 @@ class MyBookingsScreen extends StatefulWidget {
 }
 
 class _MyBookingsScreenState extends State<MyBookingsScreen> with SingleTickerProviderStateMixin {
-  int _currentIndex = 0;  // Indeks untuk Bottom Navigation
   int _reloadKey = 0;     // Deklarasi _reloadKey
 
   late TabController _tabController;
@@ -45,23 +41,6 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> with SingleTickerPr
   void initState() {
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
-  }
-
-  // Fungsi untuk membuat ikon navbar
-  Widget _buildNavIcon(IconData icon, int index) {
-    final bool isActive = _currentIndex == index;
-    return Container(
-      padding: const EdgeInsets.all(10),
-      decoration: BoxDecoration(
-        color: isActive ? const Color(0xFFF1F3F6) : Colors.transparent,
-        shape: BoxShape.circle,
-      ),
-      child: Icon(
-        icon,
-        size: 24,
-        color: isActive ? const Color(0xFF39434F) : Colors.grey,
-      ),
-    );
   }
 
   @override
@@ -104,51 +83,7 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> with SingleTickerPr
           ),
         ],
       ),
-      // BottomNavigationBar untuk navigasi tambahan
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _currentIndex,
-        type: BottomNavigationBarType.fixed,
-        backgroundColor: Colors.white,
-        elevation: 0,
-        showSelectedLabels: false,
-        showUnselectedLabels: false,
-        onTap: (index) {
-          setState(() => _currentIndex = index);
 
-          // Navigasi berdasarkan index
-          if (index == 1) {
-            Navigator.of(context).push(MaterialPageRoute(builder: (_) => const LocationScreen()));
-          } else if (index == 2) {
-            Navigator.of(context).push(MaterialPageRoute(builder: (_) => const PalNewsPage()));
-          } else if (index == 3) {
-            Navigator.of(context).push(MaterialPageRoute(builder: (_) => const MyBookingsScreen()));
-          } else if (index == 4) {
-            Navigator.of(context).push(MaterialPageRoute(builder: (_) => const ProfilePage()));
-          }
-        },
-        items: [
-          BottomNavigationBarItem(
-            icon: _buildNavIcon(Icons.home_rounded, 0),
-            label: 'Upcoming',  // Tab pertama - Upcoming
-          ),
-          BottomNavigationBarItem(
-            icon: _buildNavIcon(Icons.location_on_outlined, 1),
-            label: 'Location',
-          ),
-          BottomNavigationBarItem(
-            icon: _buildNavIcon(Icons.article_outlined, 2),
-            label: 'News',
-          ),
-          BottomNavigationBarItem(
-            icon: _buildNavIcon(Icons.calendar_today_outlined, 3),
-            label: 'Booking',
-          ),
-          BottomNavigationBarItem(
-            icon: _buildNavIcon(Icons.person_outline, 4),
-            label: 'Profile',
-          ),
-        ],
-      ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
           Navigator.push(context, MaterialPageRoute(builder: (context) => const AllDoctorsScreen())).then((_) {
@@ -332,42 +267,65 @@ class _CompletedViewState extends State<CompletedView> {
   }
 
   Future<List<AppointmentData>> fetchCompletedAppointments() async {
-     final supabase = Supabase.instance.client;
-     final user = supabase.auth.currentUser;
-     if (user == null) return [];
+    final supabase = Supabase.instance.client;
+    final user = supabase.auth.currentUser;
+    if (user == null) return [];
 
-     final now = DateTime.now();
-     final response = await supabase.from('appointments').select('appointment_id, appointment_date, doctor_id, clinic_id')
-        .eq('user_id', user.id).eq('status', 'active').lt('appointment_date', now.toIso8601String()).order('appointment_date', ascending: false);
-     
-     final appointments = <AppointmentData>[];
-     for (final row in response as List) {
-        final doctorId = row['doctor_id'];
-        
-        // --- UPDATE PENTING: AMBIL KOLOM 'experience' DARI DATABASE ---
-        final doctor = await supabase
-            .from('doctors')
-            .select('name, specialization, profile_picture, experience') // <--- Tambah experience disini
-            .eq('doctor_id', doctorId)
-            .maybeSingle();
-            
-        final clinic = await supabase.from('clinics').select('clinic_name').eq('clinic_id', row['clinic_id']).maybeSingle();
-        
-        if (doctor != null && clinic != null) {
-           appointments.add(AppointmentData(
-             appointmentId: row['appointment_id'],
-             doctorId: doctorId,
-             doctorName: doctor['name'],
-             specialization: doctor['specialization'],
-             clinic: clinic['clinic_name'],
-             doctorImage: doctor['profile_picture'] ?? '',
-             // Simpan experience
-             doctorExperience: doctor['experience'] ?? '0 years',
-             appointmentDate: DateTime.parse(row['appointment_date']),
-           ));
-        }
-     }
-     return appointments;
+    final now = DateTime.now();
+    
+    // 1. UBAH QUERY: Tambahkan ratings_reviews(*) untuk mengambil data review
+    final response = await supabase
+        .from('appointments')
+        .select('*, ratings_reviews(*)') 
+        .eq('user_id', user.id)
+        .eq('status', 'active') // atau 'completed' sesuai logic db kamu
+        .lt('appointment_date', now.toIso8601String())
+        .order('appointment_date', ascending: false);
+
+    final appointments = <AppointmentData>[];
+    
+    for (final row in response as List) {
+      final doctorId = row['doctor_id'];
+
+      // Ambil data dokter
+      final doctor = await supabase
+          .from('doctors')
+          .select('name, specialization, profile_picture, experience')
+          .eq('doctor_id', doctorId)
+          .maybeSingle();
+
+      // Ambil data klinik
+      final clinic = await supabase
+          .from('clinics')
+          .select('clinic_name')
+          .eq('clinic_id', row['clinic_id'])
+          .maybeSingle();
+
+      // 👇 LOGIKA BARU: Cek apakah ada review di dalam response
+      Map<String, dynamic>? existingReview;
+      final reviewsList = row['ratings_reviews'] as List?;
+      if (reviewsList != null && reviewsList.isNotEmpty) {
+        // Ambil review pertama (karena 1 appointment = 1 review)
+        existingReview = reviewsList[0] as Map<String, dynamic>;
+      }
+
+      if (doctor != null && clinic != null) {
+        appointments.add(AppointmentData(
+          appointmentId: row['appointment_id'],
+          doctorId: doctorId,
+          doctorName: doctor['name'],
+          specialization: doctor['specialization'],
+          clinic: clinic['clinic_name'],
+          doctorImage: doctor['profile_picture'] ?? '',
+          doctorExperience: doctor['experience'] ?? '0 years',
+          appointmentDate: DateTime.parse(row['appointment_date']),
+          
+          // 👇 Masukkan data review ke model
+          userReview: existingReview, 
+        ));
+      }
+    }
+    return appointments;
   }
 
   void _refreshAppointments() {
@@ -406,6 +364,10 @@ class _CompletedViewState extends State<CompletedView> {
                       doctorName: item.doctorName,
                       doctorSpecialization: item.specialization,
                       doctorImage: item.doctorImage,
+
+                      // 👇 KIRIM DATA REVIEW LAMA (kalau ada)
+                      existingReview: item.userReview, 
+                    
                       onSuccess: _refreshAppointments,
                     ),
                   );
@@ -565,6 +527,8 @@ class CompletedAppointmentCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final bool hasReview = appointment.userReview != null;
+
     return GestureDetector(
       onTap: onCardTap,
       child: Container(
@@ -589,7 +553,21 @@ class CompletedAppointmentCard extends StatelessWidget {
             Row(children: [
                Expanded(child: ElevatedButton(onPressed: onReBook, style: ElevatedButton.styleFrom(backgroundColor: Colors.grey[200], foregroundColor: Colors.black, elevation: 0), child: const Text("Re-Book"))),
                const SizedBox(width: 12),
-               Expanded(child: ElevatedButton(onPressed: onAddReview, style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF1E2A3B), foregroundColor: Colors.white, elevation: 0), child: const Text("Add Review"))),
+
+               // 👇 TOMBOL REVIEW YANG PINTAR
+              Expanded(
+                child: ElevatedButton(
+                  onPressed: onAddReview,
+                  style: ElevatedButton.styleFrom(
+                    // Kalau Edit, warnanya agak beda dikit biar user ngeh (opsional)
+                    backgroundColor: hasReview ? const Color(0xFF2E86C1) : const Color(0xFF1E2A3B),
+                    foregroundColor: Colors.white,
+                    elevation: 0,
+                  ),
+                  // Ganti teks sesuai kondisi
+                  child: Text(hasReview ? "Edit Review" : "Add Review"),
+                )
+              )
             ])
           ],
         ),
@@ -679,6 +657,8 @@ class AppointmentData {
   final String doctorExperience; // <--- Field Baru untuk menyimpan experience dari DB
   final DateTime appointmentDate;
 
+  final Map<String, dynamic>? userReview;
+
   AppointmentData({
     required this.appointmentId,
     required this.doctorId,
@@ -688,6 +668,7 @@ class AppointmentData {
     required this.doctorImage,
     required this.doctorExperience, // <--- Field Baru
     required this.appointmentDate,
+    this.userReview,
   });
 
   String get formattedDate {

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'all_doctors_screen.dart'; // Import the Doctor model
 import 'reschedule1.dart'; // Import the RescheduleAppointmentPage
+import 'main_layout.dart';
 
 class BookAppointmentPage extends StatefulWidget {
   final Doctor doctor;
@@ -333,9 +334,16 @@ Future<bool> _saveAppointment() async {
                   width: double.infinity,
                   child: ElevatedButton(
                     onPressed: () {
-                      Navigator.of(context).pop(); // Close dialog
-                      Navigator.of(context).pop(); // Back to previous page
-                    },
+                        // Perintah: "Hapus semua halaman sebelumnya, buka MainLayout, langsung ke Tab 3"
+                        Navigator.pushAndRemoveUntil(
+                          context,
+                          MaterialPageRoute(
+                            // initialIndex: 3 artinya buka tab 'Booking'
+                            builder: (context) => const MainLayout(initialIndex: 3), 
+                          ),
+                          (route) => false, // false = tidak bisa di-back
+                        );
+                      },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFF1E2A3B),
                       padding: const EdgeInsets.symmetric(vertical: 16),

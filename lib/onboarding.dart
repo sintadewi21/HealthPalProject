@@ -90,20 +90,41 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               itemBuilder: (context, index) {
                 final data = pages[index];
 
-                // Page 0: gambar full
+                // Page 0: gambar full + shadow overlay
                 if (data.isPureImage) {
                   return GestureDetector(
                     behavior: HitTestBehavior.opaque,
                     onTap: () => _goToPage(1),
                     onVerticalDragEnd: (details) {
                       final v = details.primaryVelocity ?? 0;
-                      if (v < -400) _goToPage(1); // swipe up
+                      if (v < -400) _goToPage(1);
                     },
-                    child: Image.asset(
-                      data.image,
-                      fit: BoxFit.cover,
-                      width: double.infinity,
-                      height: double.infinity,
+                    child: Stack(
+                      children: [
+                        // IMAGE
+                        Positioned.fill(
+                          child: Image.asset(
+                            data.image,
+                            fit: BoxFit.cover,
+                          ),
+                        ),
+
+                        // BOTTOM SHADOW ONLY
+                        Positioned.fill(
+                          child: Container(
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                begin: Alignment.bottomCenter,
+                                end: Alignment.topCenter,
+                                colors: [
+                                  Colors.black.withOpacity(0.6), // shadow bawah
+                                  Colors.transparent,
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   );
                 }

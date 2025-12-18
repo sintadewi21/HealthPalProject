@@ -13,7 +13,6 @@ class LocationScreen extends StatefulWidget {
 
 class _LocationScreenState extends State<LocationScreen> {
   LatLng? _currentPosition;
-  int _currentIndex = 1;
 
   final _supabase = Supabase.instance.client;
   final Distance _distance = const Distance();
@@ -180,40 +179,6 @@ class _LocationScreenState extends State<LocationScreen> {
                 ),
               ],
             ),
-
-      // NAVBAR TETAP ADA
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _currentIndex,
-        type: BottomNavigationBarType.fixed,
-        showSelectedLabels: false,
-        showUnselectedLabels: false,
-        onTap: (index) {
-          if (index == 1) return;
-          Navigator.pop(context);
-        },
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home_rounded),
-            label: '',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.location_on_outlined),
-            label: '',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.article_outlined),
-            label: '',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.calendar_today_outlined),
-            label: '',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person_outline),
-            label: '',
-          ),
-        ],
-      ),
     );
   }
 }

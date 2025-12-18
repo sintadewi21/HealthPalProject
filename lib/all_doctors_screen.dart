@@ -100,30 +100,41 @@ class _AllDoctorsScreenState extends State<AllDoctorsScreen> {
     });
 
     try {
-      // ambil doctors + clinics (join via foreign key clinic_id -> clinics.id)
+      // 1. QUERY: Ambil data dokter DAN data rating dari tabel review
       final response = await _supabase
           .from('doctors')
-          .select(
-            'doctor_id, name, specialization, profile_picture, rating, experience, education, clinics(clinic_name, city, country)',
-          );
+          .select('*, ratings_reviews(rating), clinics(*)');
 
       final List data = response as List;
 
       _allDoctors = data.map<Doctor>((raw) {
+        // --- LOGIKA HELPER (Clinic Location) ---
         final clinic = raw['clinics'] as Map<String, dynamic>?;
-
         final clinicName = clinic?['clinic_name'] as String? ?? 'Unknown Clinic';
         final city = clinic?['city'] as String? ?? '';
         final country = clinic?['country'] as String? ?? '';
-
         final location = (city.isNotEmpty && country.isNotEmpty)
             ? '$city, $country'
             : (city.isNotEmpty ? city : country);
 
-        final ratingRaw = raw['rating'];
-        final rating = ratingRaw is int
-            ? ratingRaw.toDouble()
-            : (ratingRaw is double ? ratingRaw : 0.0);
+        // --- BAGIAN PENTING: MENGHITUNG RATING ---
+        // Kita ambil list review mentah yang didapat dari query diatas
+        final reviewsList = raw['ratings_reviews'] as List?;
+        
+        double finalRating = 0.0; // Default kalau belum ada review
+        int totalReviews = 0;     // Default jumlah review
+
+        if (reviewsList != null && reviewsList.isNotEmpty) {
+           double totalStars = 0;
+           for (var r in reviewsList) {
+             // Ambil angka rating, tambahkan ke total
+             totalStars += (r['rating'] as num).toDouble();
+           }
+           // Rumus Rata-rata: Total Bintang / Jumlah Orang Review
+           finalRating = totalStars / reviewsList.length;
+           totalReviews = reviewsList.length;
+        }
+        // ------------------------------------------
 
         return Doctor(
           id: raw['doctor_id'] as String,
@@ -131,14 +142,17 @@ class _AllDoctorsScreenState extends State<AllDoctorsScreen> {
           specialization: raw['specialization'] as String,
           clinicName: clinicName,
           location: location,
-          rating: rating,
+          
+          // Masukkan HASIL HITUNGAN ke sini, bukan data mentah dari DB
+          rating: finalRating, 
+          
           profileImageUrl: raw['profile_picture'] as String? ??
-              'https://via.placeholder.com/150', // fallback
+              'https://via.placeholder.com/150',
           experience: raw['experience'] as String?,
           education: raw['education'] as String?,
-          // kalau kamu nanti nambah kolom "reviews" di tabel doctors:
-          // reviews: raw['reviews'] as int?,
-          reviews: null,
+          
+          // Masukkan JUMLAH REVIEW agar teks "0 Reviews" di kartu ikut berubah
+          reviews: totalReviews, 
         );
       }).toList();
 
@@ -413,12 +427,6 @@ class _DoctorCard extends StatelessWidget {
                               fontWeight: FontWeight.w700,
                             ),
                           ),
-                        ),
-                        const SizedBox(width: 4),
-                        Icon(
-                          Icons.favorite_border,
-                          size: 18,
-                          color: Colors.grey.shade500,
                         ),
                       ],
                     ),

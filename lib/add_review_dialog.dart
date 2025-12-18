@@ -7,9 +7,10 @@ class AddReviewDialog extends StatefulWidget {
   final String doctorName;
   final String doctorSpecialization;
   final String doctorImage;
+  final VoidCallback onSuccess;
   
-  // Callback agar halaman sebelumnya bisa tau kalau review berhasil disubmit
-  final VoidCallback onSuccess; 
+  // 👇 Parameter baru: Data Review Lama (Boleh null)
+  final Map<String, dynamic>? existingReview;
 
   const AddReviewDialog({
     Key? key,
@@ -19,6 +20,7 @@ class AddReviewDialog extends StatefulWidget {
     required this.doctorSpecialization,
     required this.doctorImage,
     required this.onSuccess,
+    this.existingReview, // Tambahkan di constructor
   }) : super(key: key);
 
   @override
@@ -29,6 +31,16 @@ class _AddReviewDialogState extends State<AddReviewDialog> {
   int _selectedRating = 0;
   final TextEditingController _reviewController = TextEditingController();
   bool _isLoading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    // 👇 LOGIKA PRE-FILL: Kalau mau edit, isi data lama ke form
+    if (widget.existingReview != null) {
+      _selectedRating = (widget.existingReview!['rating'] as num).toInt();
+      _reviewController.text = widget.existingReview!['review'] ?? '';
+    }
+  }
 
   Future<void> _submitReview() async {
     if (_selectedRating == 0) {
@@ -46,22 +58,37 @@ class _AddReviewDialogState extends State<AddReviewDialog> {
 
       if (user == null) throw Exception('User not logged in');
 
-      // Insert ke tabel ratings_reviews sesuai kolom yang kamu sebutkan
-      await supabase.from('ratings_reviews').insert({
-        'appointment_id': widget.appointmentId,
-        'doctor_id': widget.doctorId,
-        'user_id': user.id,
-        'rating': _selectedRating,
-        'review': _reviewController.text.trim(),
-        'created_at': DateTime.now().toIso8601String(),
-      });
+      // 👇 LOGIKA SIMPAN (Update vs Insert)
+      if (widget.existingReview != null) {
+        // --- UPDATE (EDIT) ---
+        final reviewId = widget.existingReview!['review_id'];
+        await supabase.from('ratings_reviews').update({
+          'rating': _selectedRating,
+          'review': _reviewController.text.trim(),
+          // 'created_at': DateTime.now().toIso8601String(), // Opsional: update tanggal
+        }).eq('review_id', reviewId);
+        
+      } else {
+        // --- INSERT (BARU) ---
+        await supabase.from('ratings_reviews').insert({
+          'appointment_id': widget.appointmentId,
+          'doctor_id': widget.doctorId,
+          'user_id': user.id,
+          'rating': _selectedRating,
+          'review': _reviewController.text.trim(),
+          'created_at': DateTime.now().toIso8601String(),
+        });
+      }
 
       if (!mounted) return;
       Navigator.pop(context); // Tutup dialog
-      widget.onSuccess(); // Panggil callback sukses
+      widget.onSuccess(); // Refresh halaman belakang
       
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Review posted successfully!'), backgroundColor: Colors.green),
+        SnackBar(
+          content: Text(widget.existingReview != null ? 'Review updated!' : 'Review posted successfully!'),
+          backgroundColor: Colors.green,
+        ),
       );
 
     } catch (e) {
@@ -75,6 +102,10 @@ class _AddReviewDialogState extends State<AddReviewDialog> {
 
   @override
   Widget build(BuildContext context) {
+    // Tentukan judul dialog
+    final title = widget.existingReview != null ? 'Edit Review' : 'Add Review';
+    final btnText = widget.existingReview != null ? 'Update' : 'Post';
+
     return Dialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       backgroundColor: Colors.white,
@@ -85,9 +116,9 @@ class _AddReviewDialogState extends State<AddReviewDialog> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Text(
-                'Add Review',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              Text(
+                title, // Judul dinamis
+                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 20),
 
@@ -210,7 +241,7 @@ class _AddReviewDialogState extends State<AddReviewDialog> {
                       ),
                       child: _isLoading 
                         ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                        : const Text('Post'),
+                        : Text(btnText), // Teks tombol dinamis (Post/Update)
                     ),
                   ),
                 ],

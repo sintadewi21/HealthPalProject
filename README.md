@@ -98,34 +98,66 @@ Backend aplikasi ini menggunakan **Supabase (PostgreSQL)** sebagai *Backend as a
 
 ## 📁 Struktur File Project
 
-📁HealthPalProject/lib
-|📁 palnews
-   📄palnews_detail_page.dart: Menampilkan isi artikel terkait kesehatan
-   📄palnews_model.dart: Model data Flutter untuk merepresentasikan satu berita dan mengonversi data JSON dari API agar mudah ditampilkan di UI
-   📄palnews_page.dart: Halaman utama palnews, berisi kolom search dan kategori sorting
-   📄palnews_repository.dart: Mengambil data artikel terkait kesehatan
-
-|📁 palnews/widgets:
-   📄palnews_category_chip.dart: menampilkan dan memilih kategori berita
-   📄palnews_news_card.dart: menampilkan card berisi bagian utama berita pada halaman utama
-|📄 add_review_dialog.dart: Dialog/form untuk menambahkan rating dan ulasan dokter
-|📄 all_doctors_screen.dart: Menampilkan daftar seluruh dokter yang tersedia
-|📄 book_appointment_page.dart: Halaman pemesanan appoinment dengan dokter
-|📄 book_history.dart: Menampilkan riwayat pemesanan appoinment dokter
-|📄 docdetails.dart: Menampilkan detail informasi dokter
-|📄 edit_profile.dart: Mengubah data profil pengguna
-|📄 fill_profile.dart: Pengisian data profil pengguna setelah registrasi
-|📄 homepage.dart: Halaman utama aplikasi, berisi menu yang mengarah ke fitur-fitur
-|📄 location_screen.dart: Menampilkan lokasi layanan kesehatan atau praktik dokter
-|📄 main_layout.dart: layout utama aplikasi yang mengatur navigasi antar halaman menggunakan Bottom Navigation Bar
-|📄 main.dart: Halaman inisiasi project berisi pengaturan awal ketika dijalankan (database, route, dsb)
-|📄 notification.dart: Notifikasi pengguna, seperti:Konfirmasi booking, Perubahan jadwal, Pembatalan janji temu
-|📄 onboarding.dart: Halaman pertama kali membuka aplikasi
-|📄 profile.dart: Menampilkan profil pengguna, termasuk: Informasi akun, Akses ke pengaturan, Navigasi ke halaman edit profil
-|📄 reschedule1.dart: Proses penjadwalan ulang (memilih ulang tanggal atau jadwal konsultasi)
-|📄 reschedule2.dart: Tahap lanjutan dari proses reschedule (Konfirmasi perubahan jadwal)
-|📄 sign_in.dart: Halaman masuk ke akun terdaftar
-|📄 sign_up.dart: Halaman mendaftar akun
+HealthPalProject/lib
+├── palnews
+│   ├── palnews_detail_page.dart
+│   │   └── Menampilkan isi artikel terkait kesehatan
+│   ├── palnews_model.dart
+│   │   └── Model data Flutter untuk merepresentasikan satu berita dan
+│   │       mengonversi data JSON dari API agar mudah ditampilkan di UI
+│   ├── palnews_page.dart
+│   │   └── Halaman utama PalNews, berisi kolom pencarian dan
+│   │       kategori sorting
+│   ├── palnews_repository.dart
+│   │   └── Mengambil data artikel terkait kesehatan
+│   └── widgets
+│       ├── palnews_category_chip.dart
+│       │   └── Menampilkan dan memilih kategori berita
+│       └── palnews_news_card.dart
+│           └── Menampilkan card berisi bagian utama berita
+│               pada halaman utama
+│
+├── add_review_dialog.dart
+│   └── Dialog/form untuk menambahkan rating dan ulasan dokter
+├── all_doctors_screen.dart
+│   └── Menampilkan daftar seluruh dokter yang tersedia
+├── book_appointment_page.dart
+│   └── Halaman pemesanan appointment dengan dokter
+├── book_history.dart
+│   └── Menampilkan riwayat pemesanan appointment dokter
+├── docdetails.dart
+│   └── Menampilkan detail informasi dokter
+├── edit_profile.dart
+│   └── Mengubah data profil pengguna
+├── fill_profile.dart
+│   └── Pengisian data profil pengguna setelah registrasi
+├── homepage.dart
+│   └── Halaman utama aplikasi, berisi menu yang mengarah
+│       ke fitur-fitur
+├── location_screen.dart
+│   └── Menampilkan lokasi layanan kesehatan atau
+│       praktik dokter
+├── main_layout.dart
+│   └── Layout utama aplikasi yang mengatur navigasi
+│       antar halaman menggunakan Bottom Navigation Bar
+├── main.dart
+│   └── Halaman inisiasi project berisi pengaturan awal
+│       ketika aplikasi dijalankan
+├── notification.dart
+│   └── Notifikasi pengguna seperti konfirmasi booking,
+│       perubahan jadwal, dan pembatalan janji temu
+├── onboarding.dart
+│   └── Halaman pertama kali membuka aplikasi
+├── profile.dart
+│   └── Menampilkan profil pengguna dan akses pengaturan
+├── reschedule1.dart
+│   └── Tahap awal proses penjadwalan ulang
+├── reschedule2.dart
+│   └── Tahap konfirmasi perubahan jadwal
+├── sign_in.dart
+│   └── Halaman masuk ke akun terdaftar
+└── sign_up.dart
+    └── Halaman pendaftaran akun pengguna
 
 
 
